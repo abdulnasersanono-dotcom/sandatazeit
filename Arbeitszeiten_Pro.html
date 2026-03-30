@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 <!--
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║           Sandata Arbeitszeit Pro - النسخة المتطورة                         ║
@@ -46,7 +46,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js" defer></script>
     <!-- خط مميز -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         /* ══════════════════════════════════════════════════
@@ -116,7 +116,7 @@
         html { scroll-behavior:smooth }
 
         body {
-            font-family: 'Syne', system-ui, sans-serif;
+            font-family: 'Outfit', system-ui, sans-serif;
             background: var(--bg);
             color: var(--text);
             padding: 16px;
@@ -157,16 +157,20 @@
         }
         .brand-name {
             font-weight: 800;
-            font-size: 1.1rem;
-            letter-spacing: -0.5px;
+            font-size: 1.15rem;
+            letter-spacing: -0.3px;
+            color: var(--text);
         }
         .brand-version {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            background: var(--surface3);
-            padding: 2px 7px;
+            font-size: 0.68rem;
+            color: var(--red);
+            background: rgba(212,12,12,0.12);
+            border: 1px solid rgba(212,12,12,0.25);
+            padding: 2px 8px;
             border-radius: 20px;
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: 'DM Mono', monospace;
+            font-weight: 500;
+            letter-spacing: 0.3px;
         }
         .topbar-actions {
             display: flex;
@@ -200,13 +204,15 @@
 
         /* Live Clock */
         .live-clock {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.85rem;
+            font-family: 'DM Mono', monospace;
+            font-size: 0.82rem;
+            font-weight: 500;
             color: var(--text-muted);
             background: var(--surface3);
-            padding: 6px 12px;
-            border-radius: 6px;
+            padding: 7px 13px;
+            border-radius: 8px;
             border: 1px solid var(--border);
+            letter-spacing: 0.5px;
         }
 
         /* ════════════════════════════════════
@@ -233,12 +239,12 @@
             animation: slideDown 0.3s ease;
         }
         .card-title {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 700;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 16px;
+            letter-spacing: 1.2px;
+            margin-bottom: 18px;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -272,7 +278,7 @@
             margin-bottom: 8px;
         }
         .session-timer {
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: 'DM Mono', monospace;
             font-size: 2.8rem;
             font-weight: 600;
             color: white;
@@ -323,12 +329,12 @@
             border: none;
             border-radius: var(--radius);
             cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 700;
+            font-size: 0.84rem;
+            font-weight: 600;
             font-family: inherit;
             transition: var(--transition);
             display: flex; align-items: center; justify-content: center; gap: 6px;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.2px;
         }
         .btn:active { transform: scale(0.97); }
         .btn-primary  { background: var(--red);   color: white; }
@@ -361,7 +367,7 @@
         }
         .break-banner.active { display: flex; animation: slideDown 0.2s ease; }
         .break-duration {
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: 'DM Mono', monospace;
             margin-left: auto;
         }
 
@@ -370,33 +376,51 @@
            ════════════════════════════════════ */
         .settings-grid {
             display: grid;
-            gap: 12px;
+            gap: 14px;
         }
-        .field { display: flex; flex-direction: column; gap: 5px; }
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .field { display: flex; flex-direction: column; gap: 6px; }
         .field label {
-            font-size: 0.73rem;
-            font-weight: 700;
+            font-size: 0.7rem;
+            font-weight: 600;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
         }
         .field input, .field select, .field textarea {
-            padding: 9px 12px;
+            padding: 10px 12px;
             background: var(--surface2);
-            border: 1px solid var(--border);
+            border: 1.5px solid var(--border);
             border-radius: var(--radius);
             color: var(--text);
-            font-size: 0.88rem;
+            font-size: 0.875rem;
             font-family: inherit;
+            font-weight: 500;
             transition: var(--transition);
         }
         .field input:focus, .field select:focus, .field textarea:focus {
             outline: none;
             border-color: var(--red);
             box-shadow: 0 0 0 3px var(--red-glow);
+            background: var(--surface);
         }
         .field textarea { resize: vertical; min-height: 60px; }
         .field input[type=number]::-webkit-inner-spin-button { opacity:1; }
+        .settings-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 2px 0;
+        }
+        .settings-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
 
         /* ════════════════════════════════════
            القسم 3.5: بطاقات الإحصائيات
@@ -420,7 +444,7 @@
         .stat-icon { font-size: 1.4rem; margin-bottom: 6px; }
         .stat-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
         .stat-val {
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: 'DM Mono', monospace;
             font-size: 1.3rem;
             font-weight: 600;
             animation: countUp 0.4s ease;
@@ -550,7 +574,7 @@
             padding: 4px 6px;
             color: var(--text);
             font-size: 0.82rem;
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: 'DM Mono', monospace;
             width: 90px;
             transition: var(--transition);
         }
@@ -652,7 +676,7 @@
             padding: 14px;
         }
         .adv-stat-label { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .adv-stat-val { font-family: 'IBM Plex Mono', monospace; font-size: 1.1rem; font-weight: 700; }
+        .adv-stat-val { font-family: 'DM Mono', monospace; font-size: 1.1rem; font-weight: 700; }
 
         /* ════════════════════════════════════
            القسم 3.12: الإشعارات
@@ -688,6 +712,14 @@
         /* ════════════════════════════════════
            القسم 3.13: مؤشر الاتصال
            ════════════════════════════════════ */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
         .status-dot {
             width: 8px; height: 8px;
             border-radius: 50%;
@@ -734,7 +766,7 @@
         .divider { height: 1px; background: var(--border); margin: 12px 0; }
         .text-muted { color: var(--text-muted); }
         .text-sm { font-size: 0.78rem; }
-        .mono { font-family: 'IBM Plex Mono', monospace; }
+        .mono { font-family: 'DM Mono', monospace; }
         .flex { display: flex; align-items: center; }
         .gap-8 { gap: 8px; }
         .mt-8 { margin-top: 8px; }
@@ -767,6 +799,212 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        /* ══════════════════════════════════════════
+           التقويم الشهري
+           ══════════════════════════════════════════ */
+        .modal-calendar {
+            max-width: 600px;
+            width: 100%;
+        }
+        .cal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        .cal-nav-btn {
+            width: 34px; height: 34px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text);
+            font-size: 16px;
+            display: flex; align-items: center; justify-content: center;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        .cal-nav-btn:hover { background: var(--surface3); border-color: var(--red); color: var(--red); }
+        .cal-month-label {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+            flex: 1;
+            text-align: center;
+            letter-spacing: -0.3px;
+        }
+        .cal-selects {
+            display: flex;
+            gap: 6px;
+        }
+        .cal-selects select {
+            padding: 5px 9px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.82rem;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .cal-selects select:focus { outline: none; border-color: var(--red); }
+
+        /* Legend */
+        .cal-legend {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+            padding: 10px 14px;
+            background: var(--surface2);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+        .cal-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .cal-dot {
+            width: 10px; height: 10px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+        .cal-dot.work     { background: var(--blue); }
+        .cal-dot.vacation { background: var(--green); }
+        .cal-dot.sick     { background: #ff8080; }
+        .cal-dot.holiday  { background: var(--yellow); }
+        .cal-dot.planned  { background: var(--purple); }
+        .cal-dot.today    { background: var(--red); }
+
+        /* Grid */
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .cal-day-name {
+            text-align: center;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 6px 0;
+        }
+        .cal-day {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            border: 1.5px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            min-height: 44px;
+            background: var(--surface2);
+            gap: 2px;
+        }
+        .cal-day:hover { border-color: var(--border2); background: var(--surface3); }
+        .cal-day.empty { background: transparent; cursor: default; border-color: transparent; }
+        .cal-day.today { border-color: var(--red) !important; }
+        .cal-day.today .cal-day-num { color: var(--red); font-weight: 800; }
+        .cal-day.weekend .cal-day-num { color: var(--text-dim); }
+        .cal-day.day-work     { background: var(--blue-bg);              border-color: rgba(59,130,246,0.3); }
+        .cal-day.day-vacation { background: var(--green-bg);             border-color: rgba(0,208,132,0.3); }
+        .cal-day.day-sick     { background: rgba(255,128,128,0.12);      border-color: rgba(255,128,128,0.3); }
+        .cal-day.day-holiday  { background: var(--yellow-bg);            border-color: rgba(245,166,35,0.3); }
+        .cal-day.day-planned  { background: rgba(168,85,247,0.12);       border-color: rgba(168,85,247,0.35); }
+        .cal-day.day-planned:hover { border-color: var(--purple); }
+        .cal-day-num {
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: 'DM Mono', monospace;
+            line-height: 1;
+        }
+        .cal-day-icon {
+            font-size: 0.75rem;
+            line-height: 1;
+        }
+
+        /* Vacation planner */
+        .cal-planner {
+            margin-top: 16px;
+            padding: 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+        .cal-planner-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 10px;
+        }
+        .cal-planner-row {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        .cal-planner-row .field { flex: 1; min-width: 110px; }
+        .cal-planned-list {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .cal-planned-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(168,85,247,0.1);
+            border: 1px solid rgba(168,85,247,0.25);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 0.78rem;
+        }
+        .cal-planned-item span { color: var(--text-muted); }
+        .cal-planned-item strong { color: var(--purple); }
+        .cal-planned-del {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0 2px;
+            transition: var(--transition);
+        }
+        .cal-planned-del:hover { color: var(--red); }
+
+        /* Month summary */
+        .cal-summary {
+            display: grid;
+            grid-template-columns: repeat(4,1fr);
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .cal-sum-box {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 10px;
+            text-align: center;
+        }
+        .cal-sum-val { font-family: 'DM Mono', monospace; font-size: 1.1rem; font-weight: 700; }
+        .cal-sum-lbl { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
     </style>
 </head>
 <body>
@@ -789,12 +1027,14 @@
     </div>
     <div class="topbar-actions">
         <!-- مؤشر الاتصال -->
-        <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--text-muted)">
+        <div class="status-indicator">
             <span class="status-dot" id="onlineDot"></span>
             <span id="onlineLabel">Online</span>
         </div>
         <!-- ساعة مباشرة -->
         <div class="live-clock" id="liveClock">--:--:--</div>
+        <!-- التقويم -->
+        <button class="icon-btn" onclick="openCalendar()" title="Kalender öffnen" style="font-size:18px">📅</button>
         <!-- نسخ احتياطي -->
         <button class="icon-btn" onclick="exportBackup()" title="Backup exportieren">💾</button>
         <!-- استعادة -->
@@ -851,9 +1091,9 @@
 
         <!-- بطاقة الإعدادات -->
         <div class="card">
-            <div class="card-title">Einstellungen</div>
+            <div class="card-title">⚙ Einstellungen</div>
             <div class="settings-grid">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div class="field-row">
                     <div class="field">
                         <label>Monat</label>
                         <select id="monSelect" onchange="loadLogs()"></select>
@@ -867,7 +1107,8 @@
                     <label>Soll-Stunden / Monat</label>
                     <input type="number" id="sollH" value="160" min="0" max="500" oninput="updateStats()">
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div class="settings-divider"></div>
+                <div class="field-row">
                     <div class="field">
                         <label>Pause Standard</label>
                         <select id="pauseI">
@@ -890,11 +1131,11 @@
                 </div>
             </div>
             <!-- أزرار الإعدادات -->
-            <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-                <button class="btn btn-ghost btn-sm" onclick="openAddModal()">+ Manuell</button>
+            <div class="settings-actions">
+                <button class="btn btn-ghost btn-sm" onclick="openAddModal()">＋ Manuell</button>
                 <button class="btn btn-ghost btn-sm" onclick="openExportModal()">📄 PDF</button>
                 <button class="btn btn-ghost btn-sm" onclick="doExportXLS()">📊 Excel</button>
-                <button class="btn btn-danger  btn-sm" onclick="openClearModal()">🗑️ Löschen</button>
+                <button class="btn btn-danger btn-sm" onclick="openClearModal()">🗑 Löschen</button>
             </div>
         </div>
 
@@ -1100,6 +1341,88 @@
         <div class="modal-actions">
             <button class="btn btn-ghost" onclick="closeModal('modal-note')">Abbrechen</button>
             <button class="btn btn-primary" onclick="saveNote()">✓ Speichern</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- نافذة التقويم -->
+<div class="modal-overlay" id="modal-calendar">
+    <div class="modal modal-calendar">
+        <h3>📅 Kalender</h3>
+
+        <!-- التنقل بين الأشهر -->
+        <div class="cal-header">
+            <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+            <span class="cal-month-label" id="calMonthLabel"></span>
+            <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+            <div class="cal-selects">
+                <select id="calMonSel" onchange="calGoTo()"></select>
+                <select id="calYearSel" onchange="calGoTo()"></select>
+            </div>
+        </div>
+
+        <!-- وسيلة الإيضاح -->
+        <div class="cal-legend">
+            <div class="cal-legend-item"><div class="cal-dot work"></div> Gearbeitet</div>
+            <div class="cal-legend-item"><div class="cal-dot vacation"></div> Urlaub</div>
+            <div class="cal-legend-item"><div class="cal-dot sick"></div> Krank</div>
+            <div class="cal-legend-item"><div class="cal-dot holiday"></div> Feiertag</div>
+            <div class="cal-legend-item"><div class="cal-dot planned"></div> Geplant</div>
+            <div class="cal-legend-item"><div class="cal-dot today"></div> Heute</div>
+        </div>
+
+        <!-- شبكة التقويم -->
+        <div class="cal-grid" id="calGrid"></div>
+
+        <!-- ملخص الشهر -->
+        <div class="cal-summary">
+            <div class="cal-sum-box">
+                <div class="cal-sum-val" id="calSumWork" style="color:var(--blue)">0</div>
+                <div class="cal-sum-lbl">Arbeitstage</div>
+            </div>
+            <div class="cal-sum-box">
+                <div class="cal-sum-val" id="calSumVac" style="color:var(--green)">0</div>
+                <div class="cal-sum-lbl">Urlaub</div>
+            </div>
+            <div class="cal-sum-box">
+                <div class="cal-sum-val" id="calSumSick" style="color:#ff8080">0</div>
+                <div class="cal-sum-lbl">Krank</div>
+            </div>
+            <div class="cal-sum-box">
+                <div class="cal-sum-val" id="calSumPlanned" style="color:var(--purple)">0</div>
+                <div class="cal-sum-lbl">Geplant</div>
+            </div>
+        </div>
+
+        <!-- تخطيط الإجازات المستقبلية -->
+        <div class="cal-planner">
+            <div class="cal-planner-title">🗓 Urlaub planen</div>
+            <div class="cal-planner-row">
+                <div class="field">
+                    <label>Von</label>
+                    <input type="date" id="planFrom">
+                </div>
+                <div class="field">
+                    <label>Bis</label>
+                    <input type="date" id="planTo">
+                </div>
+                <div class="field" style="min-width:90px">
+                    <label>Typ</label>
+                    <select id="planType">
+                        <option value="Urlaub">Urlaub</option>
+                        <option value="Feiertag">Feiertag</option>
+                        <option value="Krank">Krank</option>
+                        <option value="Halbtag">Halbtag</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-sm" style="flex-shrink:0;align-self:flex-end" onclick="addPlannedVacation()">＋ Speichern</button>
+            </div>
+            <div class="cal-planned-list" id="plannedList"></div>
+        </div>
+
+        <div class="modal-actions" style="margin-top:16px">
+            <button class="btn btn-ghost" onclick="closeModal('modal-calendar')">Schließen</button>
         </div>
     </div>
 </div>
@@ -1362,9 +1685,22 @@ function startSessionTimer() {
 function checkActiveSession() {
     const saved = localStorage.getItem('active_session');
     if (!saved) return;
-    const s = JSON.parse(saved);
+
+    let s;
+    try { s = JSON.parse(saved); } catch(e) {
+        localStorage.removeItem('active_session');
+        return;
+    }
+
+    const startDate = new Date(s.start);
+    // التحقق من صحة التاريخ — إذا كان غير صالح نمسح الجلسة الفاسدة
+    if (!s.start || isNaN(startDate.getTime())) {
+        localStorage.removeItem('active_session');
+        return;
+    }
+
     state.session.active      = true;
-    state.session.start       = new Date(s.start);
+    state.session.start       = startDate;
     state.session.totalPause  = s.totalPause || 0;
     updateSessionUI();
     startSessionTimer();
@@ -1974,6 +2310,14 @@ window.addEventListener('load', () => {
         document.getElementById('themeBtn').textContent = '☀️';
     }
 
+    // تنظيف أي جلسة فاسدة من إصدارات قديمة
+    try {
+        const s = JSON.parse(localStorage.getItem('active_session') || 'null');
+        if (s && isNaN(new Date(s.start).getTime())) {
+            localStorage.removeItem('active_session');
+        }
+    } catch(e) { localStorage.removeItem('active_session'); }
+
     initSelects();
     loadLogs();
     startClock();
@@ -1981,7 +2325,210 @@ window.addEventListener('load', () => {
     registerSW();
 });
 
-// ── Service Worker ──
+// ════════════════════════════════════════════
+// التقويم الشهري
+// ════════════════════════════════════════════
+
+const calState = {
+    year:  new Date().getFullYear(),
+    month: new Date().getMonth()   // 0-based
+};
+
+function openCalendar() {
+    // مزامنة مع الشهر المحدد في الإعدادات
+    calState.month = parseInt(document.getElementById('monSelect')?.value ?? new Date().getMonth());
+    calState.year  = parseInt(document.getElementById('yearSelect')?.value ?? new Date().getFullYear());
+    initCalSelects();
+    renderCalendar();
+    renderPlannedList();
+    openModal('modal-calendar');
+}
+
+function initCalSelects() {
+    const ms = document.getElementById('calMonSel');
+    const ys = document.getElementById('calYearSel');
+    if (!ms.options.length) {
+        CONFIG.months.forEach((m, i) => {
+            const o = document.createElement('option');
+            o.value = i; o.textContent = m; ms.appendChild(o);
+        });
+        const cy = new Date().getFullYear();
+        for (let y = cy - 3; y <= cy + 3; y++) {
+            const o = document.createElement('option');
+            o.value = y; o.textContent = y; ys.appendChild(o);
+        }
+    }
+    ms.value = calState.month;
+    ys.value = calState.year;
+}
+
+function calNav(dir) {
+    calState.month += dir;
+    if (calState.month > 11) { calState.month = 0;  calState.year++; }
+    if (calState.month < 0)  { calState.month = 11; calState.year--; }
+    document.getElementById('calMonSel').value  = calState.month;
+    document.getElementById('calYearSel').value = calState.year;
+    renderCalendar();
+}
+
+function calGoTo() {
+    calState.month = parseInt(document.getElementById('calMonSel').value);
+    calState.year  = parseInt(document.getElementById('calYearSel').value);
+    renderCalendar();
+}
+
+function getLogsForMonth(y, m) {
+    const key = `szeit_${y}_${m}`;
+    try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
+}
+
+function getPlannedVacations() {
+    try { return JSON.parse(localStorage.getItem('planned_vacations') || '[]'); } catch { return []; }
+}
+
+function renderCalendar() {
+    const { year, month } = calState;
+    document.getElementById('calMonthLabel').textContent =
+        `${CONFIG.months[month]} ${year}`;
+
+    const logs    = getLogsForMonth(year, month);
+    const planned = getPlannedVacations();
+    const today   = new Date();
+
+    // بناء Map من التاريخ إلى نوع السجل
+    const logMap = {};
+    logs.forEach(e => { logMap[e.date] = e.type; });
+
+    // بناء Set من أيام الإجازات المخططة
+    const plannedSet = {};
+    planned.forEach(p => {
+        const from = new Date(p.from);
+        const to   = new Date(p.to);
+        for (let d = new Date(from); d <= to; d.setDate(d.getDate()+1)) {
+            const key = d.toISOString().split('T')[0];
+            const [py, pm] = key.split('-').map(Number);
+            if (py === year && pm-1 === month) plannedSet[key] = p.type;
+        }
+    });
+
+    const dayNames = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+    const firstDay = new Date(year, month, 1).getDay(); // 0=So
+    const offset   = firstDay === 0 ? 6 : firstDay - 1; // Mo=0 ... So=6
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+
+    let html = dayNames.map(d => `<div class="cal-day-name">${d}</div>`).join('');
+
+    // خلايا فارغة قبل بداية الشهر
+    for (let i = 0; i < offset; i++) html += `<div class="cal-day empty"></div>`;
+
+    let workCount=0, vacCount=0, sickCount=0, plannedCount=0;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr  = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const dow      = new Date(year, month, day).getDay(); // 0=So,6=Sa
+        const isWeekend = dow === 0 || dow === 6;
+        const isToday  = (today.getFullYear()===year && today.getMonth()===month && today.getDate()===day);
+        const logType  = logMap[dateStr];
+        const planType = plannedSet[dateStr];
+
+        let cls = 'cal-day';
+        let icon = '';
+
+        if (isWeekend) cls += ' weekend';
+        if (isToday)   cls += ' today';
+
+        if (logType) {
+            if (logType === 'Arbeitszeit' || logType === 'Halbtag') {
+                cls += ' day-work'; icon = '💼'; workCount++;
+            } else if (logType === 'Urlaub') {
+                cls += ' day-vacation'; icon = '🏖'; vacCount++;
+            } else if (logType === 'Krank') {
+                cls += ' day-sick'; icon = '🤒'; sickCount++;
+            } else if (logType === 'Feiertag') {
+                cls += ' day-holiday'; icon = '🎉';
+            }
+        } else if (planType) {
+            cls += ' day-planned'; icon = '✈'; plannedCount++;
+        }
+
+        html += `<div class="${cls}" onclick="calDayClick('${dateStr}','${planType||''}')">
+            <span class="cal-day-num">${day}</span>
+            ${icon ? `<span class="cal-day-icon">${icon}</span>` : ''}
+        </div>`;
+    }
+
+    document.getElementById('calGrid').innerHTML = html;
+    document.getElementById('calSumWork').textContent    = workCount;
+    document.getElementById('calSumVac').textContent     = vacCount;
+    document.getElementById('calSumSick').textContent    = sickCount;
+    document.getElementById('calSumPlanned').textContent = plannedCount;
+}
+
+function calDayClick(dateStr, plannedType) {
+    // إذا كانت إجازة مخططة → حذف مباشر
+    if (plannedType) {
+        if (confirm(`Geplanten Urlaub für ${dateStr} entfernen?`)) {
+            removePlannedByDate(dateStr);
+        }
+        return;
+    }
+    // وإلا اضبط التاريخ في منطقة التخطيط
+    document.getElementById('planFrom').value = dateStr;
+    document.getElementById('planTo').value   = dateStr;
+    document.getElementById('planFrom').focus();
+}
+
+function addPlannedVacation() {
+    const from = document.getElementById('planFrom').value;
+    const to   = document.getElementById('planTo').value;
+    const type = document.getElementById('planType').value;
+    if (!from || !to) { toast('Bitte Von und Bis ausfüllen', 'warning'); return; }
+    if (from > to)    { toast('Von muss vor Bis liegen', 'warning'); return; }
+
+    const list = getPlannedVacations();
+    list.push({ from, to, type, id: Date.now() });
+    localStorage.setItem('planned_vacations', JSON.stringify(list));
+
+    renderCalendar();
+    renderPlannedList();
+    toast(`✅ ${type} geplant: ${from} – ${to}`, 'success');
+}
+
+function removePlannedByDate(dateStr) {
+    let list = getPlannedVacations();
+    list = list.filter(p => !(p.from <= dateStr && dateStr <= p.to));
+    localStorage.setItem('planned_vacations', JSON.stringify(list));
+    renderCalendar();
+    renderPlannedList();
+    toast('🗑 Geplanter Urlaub entfernt', 'info');
+}
+
+function deletePlanned(id) {
+    let list = getPlannedVacations().filter(p => p.id !== id);
+    localStorage.setItem('planned_vacations', JSON.stringify(list));
+    renderCalendar();
+    renderPlannedList();
+    toast('🗑 Gelöscht', 'info');
+}
+
+function renderPlannedList() {
+    const list = getPlannedVacations();
+    const el   = document.getElementById('plannedList');
+    if (!list.length) {
+        el.innerHTML = `<div style="font-size:0.75rem;color:var(--text-dim);padding:6px 0">Keine geplanten Urlaube</div>`;
+        return;
+    }
+    const typeIcons = { 'Urlaub':'🏖','Feiertag':'🎉','Krank':'🤒','Halbtag':'🌓' };
+    el.innerHTML = list.sort((a,b) => a.from.localeCompare(b.from)).map(p => `
+        <div class="cal-planned-item">
+            <span>${typeIcons[p.type]||'📌'} <strong>${p.type}</strong></span>
+            <span>${p.from} → ${p.to}</span>
+            <button class="cal-planned-del" onclick="deletePlanned(${p.id})" title="Löschen">✕</button>
+        </div>
+    `).join('');
+}
+
+
 function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const code = `
