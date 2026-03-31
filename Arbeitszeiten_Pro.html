@@ -1,1438 +1,1020 @@
-
-<!--
-╔══════════════════════════════════════════════════════════════════════════════╗
-║           Sandata Arbeitszeit Pro - النسخة المتطورة                         ║
-║                                                                              ║
-║  الميزات الجديدة المضافة:                                                    ║
-║  ✅ تصدير Excel (XLSX) إضافة لـ PDF                                          ║
-║  ✅ نسخ احتياطي واستعادة (Backup/Restore JSON)                              ║
-║  ✅ إشعارات الساعة (تذكير بالاستراحة والخروج)                               ║
-║  ✅ تتبع الموقع الجغرافي عند Check-In/Out                                   ║
-║  ✅ ملاحظات على كل يوم عمل (Notizen)                                         ║
-║  ✅ إحصائيات متقدمة (أفضل يوم، أسوأ يوم، نسبة الأداء)                       ║
-║  ✅ مقارنة بين أشهر متعددة في الرسم البياني                                 ║
-║  ✅ أنواع إضافية للأيام (مرض، عطلة رسمية، دوام جزئي)                        ║
-║  ✅ تعديل سجلات مباشرة من الجدول (Inline Edit)                               ║
-║  ✅ بحث وفلترة السجلات                                                       ║
-║  ✅ عداد ساعات العمل المباشر (Live Timer)                                    ║
-║  ✅ وضع PWA كامل (يعمل بدون إنترنت + يُثبَّت على الجوال)                    ║
-║  ✅ دعم كامل للوضع الليلي والفاتح                                            ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-
-أين تضع ماذا - دليل التعديل السريع:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📌 تغيير الاسم والشركة الافتراضيين  → ابحث عن "CONFIG.defaults"  (سطر ~220)
-📌 تغيير الألوان الرئيسية           → ابحث عن ":root {"           (سطر ~60)
-📌 تغيير رابط Google Sheets          → ابحث عن "scriptURL"         (سطر ~225)
-📌 إضافة نوع يوم جديد               → ابحث عن "ENTRY_TYPES"        (سطر ~230)
-📌 تغيير وقت تذكير الاستراحة        → ابحث عن "breakReminderMins"  (سطر ~228)
-📌 إضافة عمود للجدول                → ابحث عن "renderLogTable"     (سطر ~850)
-📌 تغيير تصميم PDF                   → ابحث عن "function exportPDF" (سطر ~1050)
-📌 تغيير حقول تصدير Excel            → ابحث عن "function exportXLS" (سطر ~1130)
--->
+<!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Sandata Arbeitszeit Pro - Professional Time Tracking">
-    <meta name="theme-color" content="#D40C0C">
-    <title>Sandata Zeit Pro</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Sandata Arbeitszeit Pro v3">
+<meta name="theme-color" content="#D40C0C">
+<title>Sandata Zeit Pro v3</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js" defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════
+   SANDATA ZEIT PRO v3 — Design System
+   ══════════════════════════════════════════════════════ */
+:root {
+    --red:        #D40C0C;
+    --red-light:  #e8352d;
+    --red-dark:   #a80909;
+    --red-glow:   rgba(212,12,12,0.22);
 
-    <!-- ── المكتبات الخارجية ── -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <!-- مكتبة SheetJS لتصدير Excel -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js" defer></script>
-    <!-- خط مميز -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    --bg:         #070910;
+    --surface:    #0e1118;
+    --surface2:   #141921;
+    --surface3:   #1a2030;
+    --surface4:   #212840;
+    --border:     #1e2535;
+    --border2:    #28304a;
+    --border3:    #323d5a;
 
-    <style>
-        /* ══════════════════════════════════════════════════
-           القسم 2: المتغيرات والألوان
-           ══════════════════════════════════════════════════ */
-        :root {
-            /* ── ألوان العلامة التجارية ── */
-            --red:       #D40C0C;
-            --red-light: #E6342A;
-            --red-dark:  #A80909;
-            --red-glow:  rgba(212,12,12,0.25);
+    --text:       #eef0f6;
+    --text-muted: #7b87a0;
+    --text-dim:   #3d4a65;
 
-            /* ── ألوان الوضع الداكن (افتراضي) ── */
-            --bg:         #0a0c10;
-            --surface:    #111318;
-            --surface2:   #171b23;
-            --surface3:   #1e2330;
-            --border:     #252b38;
-            --border2:    #2e3647;
-            --text:       #e8eaf0;
-            --text-muted: #8892a4;
-            --text-dim:   #4a5568;
+    --green:      #10d076;
+    --green-bg:   rgba(16,208,118,0.1);
+    --yellow:     #f5a623;
+    --yellow-bg:  rgba(245,166,35,0.1);
+    --blue:       #4f87f5;
+    --blue-bg:    rgba(79,135,245,0.1);
+    --purple:     #a86ef7;
+    --purple-bg:  rgba(168,110,247,0.1);
+    --orange:     #f97316;
+    --pink:       #ec4899;
+    --cyan:       #22d3ee;
 
-            /* ── ألوان الحالات ── */
-            --green:   #00d084;
-            --green-bg: rgba(0,208,132,0.12);
-            --yellow:  #f5a623;
-            --yellow-bg: rgba(245,166,35,0.12);
-            --blue:    #3b82f6;
-            --blue-bg: rgba(59,130,246,0.12);
-            --purple:  #a855f7;
-            --orange:  #fb923c;
-            --pink:    #ec4899;
+    --radius:    10px;
+    --radius-lg: 16px;
+    --radius-xl: 22px;
+    --shadow:    0 4px 32px rgba(0,0,0,0.5);
+    --shadow-lg: 0 8px 48px rgba(0,0,0,0.6);
+    --glow:      0 0 0 1px rgba(255,255,255,0.04);
+    --transition: 0.18s cubic-bezier(.4,0,.2,1);
+}
 
-            /* ── أبعاد ── */
-            --radius:    10px;
-            --radius-lg: 16px;
-            --shadow:    0 4px 24px rgba(0,0,0,0.4);
-            --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
-        }
+body.light {
+    --bg:       #f1f4f9;
+    --surface:  #ffffff;
+    --surface2: #f8fafc;
+    --surface3: #edf1f7;
+    --surface4: #e4eaf4;
+    --border:   #dde3ef;
+    --border2:  #c8d0e4;
+    --border3:  #b0bcd8;
+    --text:     #131928;
+    --text-muted:#5c6880;
+    --text-dim: #a0aabf;
+    --shadow:   0 2px 16px rgba(0,0,0,0.08);
+    --shadow-lg:0 8px 32px rgba(0,0,0,0.12);
+    --glow:     0 0 0 1px rgba(0,0,0,0.04);
+}
 
-        /* ── الوضع الفاتح ── */
-        body.light {
-            --bg:         #f0f2f5;
-            --surface:    #ffffff;
-            --surface2:   #f8f9fc;
-            --surface3:   #eef0f5;
-            --border:     #dde1ea;
-            --border2:    #c8cdd8;
-            --text:       #1a1f2e;
-            --text-muted: #5a6478;
-            --text-dim:   #9aa0b0;
-        }
+@keyframes slideDown   { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideUp     { from{opacity:0;transform:translateY(12px)}  to{opacity:1;transform:translateY(0)} }
+@keyframes slideRight  { from{opacity:0;transform:translateX(40px)}  to{opacity:1;transform:translateX(0)} }
+@keyframes fadeIn      { from{opacity:0} to{opacity:1} }
+@keyframes pulse       { 0%,100%{opacity:1} 50%{opacity:.5} }
+@keyframes spin        { to{transform:rotate(360deg)} }
+@keyframes shake       { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+@keyframes blink       { 0%,100%{box-shadow:0 0 0 0 var(--red-glow)} 50%{box-shadow:0 0 0 8px transparent} }
+@keyframes shimmer     { from{background-position:-200% 0} to{background-position:200% 0} }
+@keyframes countUp     { from{opacity:0;transform:scale(.85)} to{opacity:1;transform:scale(1)} }
+@keyframes heatIn      { from{opacity:0;transform:scale(.4)} to{opacity:1;transform:scale(1)} }
 
-        /* ════════════════════════════════════
-           القسم 3: الأساس والحركات
-           ════════════════════════════════════ */
-        @keyframes slideDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes slideRight { from{opacity:0;transform:translateX(60px)} to{opacity:1;transform:translateX(0)} }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-        @keyframes spin { to{transform:rotate(360deg)} }
-        @keyframes countUp { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
-        @keyframes blink { 0%,100%{box-shadow:0 0 0 0 var(--red-glow)} 50%{box-shadow:0 0 0 8px transparent} }
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0 }
+html { scroll-behavior:smooth }
+body { font-family:'Outfit',system-ui,sans-serif; background:var(--bg); color:var(--text); padding:14px; min-height:100vh; line-height:1.5; transition:background var(--transition),color var(--transition); }
 
-        *, *::before, *::after { box-sizing:border-box; margin:0; padding:0 }
+/* ══════════ TOPBAR ══════════ */
+.topbar {
+    position:sticky; top:0; z-index:100;
+    background:var(--surface);
+    border:1px solid var(--border2);
+    border-radius:var(--radius-xl);
+    padding:10px 18px;
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:14px;
+    box-shadow:var(--shadow);
+    backdrop-filter:blur(20px);
+}
+.topbar-brand { display:flex; align-items:center; gap:10px; }
+.brand-logo {
+    width:34px; height:34px;
+    background:linear-gradient(135deg,var(--red-dark),var(--red));
+    border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; box-shadow:0 2px 8px var(--red-glow);
+}
+.brand-name { font-weight:800; font-size:1.08rem; letter-spacing:-.3px; }
+.brand-version {
+    font-size:.65rem; color:var(--red);
+    background:rgba(212,12,12,.1); border:1px solid rgba(212,12,12,.2);
+    padding:2px 7px; border-radius:20px;
+    font-family:'DM Mono',monospace; font-weight:600;
+}
+.topbar-actions { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.icon-btn {
+    width:34px; height:34px;
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:9px; cursor:pointer; color:var(--text); font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+    transition:var(--transition); position:relative;
+}
+.icon-btn:hover { background:var(--surface3); border-color:var(--red); transform:translateY(-1px); }
+.icon-btn .badge {
+    position:absolute; top:-4px; right:-4px;
+    background:var(--red); color:#fff; font-size:9px; font-weight:700;
+    width:15px; height:15px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+}
+.live-clock {
+    font-family:'DM Mono',monospace; font-size:.78rem; font-weight:500;
+    color:var(--text-muted); background:var(--surface3);
+    padding:6px 12px; border-radius:8px; border:1px solid var(--border);
+}
+.status-indicator { display:flex; align-items:center; gap:5px; font-size:.72rem; color:var(--text-muted); }
+.status-dot { width:7px; height:7px; border-radius:50%; background:var(--green); display:inline-block; animation:blink 2s infinite; }
+.status-dot.offline { background:var(--red); animation:none; }
 
-        html { scroll-behavior:smooth }
+/* ══════════ LAYOUT ══════════ */
+.main-grid { display:grid; grid-template-columns:320px 1fr; gap:14px; max-width:1440px; margin:0 auto; }
+.sidebar { display:flex; flex-direction:column; gap:14px; }
+.content-area { display:flex; flex-direction:column; gap:14px; }
 
-        body {
-            font-family: 'Outfit', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            padding: 16px;
-            min-height: 100vh;
-            transition: background var(--transition), color var(--transition);
-            line-height: 1.5;
-        }
+/* ══════════ CARD ══════════ */
+.card {
+    background:var(--surface); border:1px solid var(--border2);
+    border-radius:var(--radius-lg); padding:20px;
+    box-shadow:var(--glow); animation:slideDown .25s ease;
+    transition:border-color var(--transition);
+}
+.card:hover { border-color:var(--border3); }
+.card-title {
+    font-size:.68rem; font-weight:700; color:var(--text-muted);
+    text-transform:uppercase; letter-spacing:1.1px;
+    margin-bottom:16px; display:flex; align-items:center; gap:8px;
+}
+.card-title::before { content:''; width:3px; height:13px; background:var(--red); border-radius:2px; }
 
-        /* ════════════════════════════════════
-           القسم 3.1: شريط الرأس العلوي
-           ════════════════════════════════════ */
-        .topbar {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            box-shadow: var(--shadow);
-            backdrop-filter: blur(10px);
-        }
-        .topbar-brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .brand-logo {
-            width: 36px; height: 36px;
-            background: var(--red);
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px;
-        }
-        .brand-name {
-            font-weight: 800;
-            font-size: 1.15rem;
-            letter-spacing: -0.3px;
-            color: var(--text);
-        }
-        .brand-version {
-            font-size: 0.68rem;
-            color: var(--red);
-            background: rgba(212,12,12,0.12);
-            border: 1px solid rgba(212,12,12,0.25);
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-family: 'DM Mono', monospace;
-            font-weight: 500;
-            letter-spacing: 0.3px;
-        }
-        .topbar-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .icon-btn {
-            width: 36px; height: 36px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            cursor: pointer;
-            color: var(--text);
-            font-size: 16px;
-            display: flex; align-items: center; justify-content: center;
-            transition: var(--transition);
-            position: relative;
-        }
-        .icon-btn:hover { background: var(--surface3); border-color: var(--red); }
-        .icon-btn .badge {
-            position: absolute;
-            top: -4px; right: -4px;
-            background: var(--red);
-            color: white;
-            font-size: 9px;
-            font-weight: 700;
-            width: 16px; height: 16px;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-        }
+/* ══════════ SESSION CARD ══════════ */
+.session-card { background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow); }
+.session-header {
+    background:linear-gradient(145deg,#1a0303,#3a0808,#1a0303);
+    padding:22px 18px; text-align:center; position:relative; overflow:hidden;
+}
+.session-header::before {
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(ellipse at 50% 0%,rgba(212,12,12,.3),transparent 70%);
+}
+.session-status { font-size:.72rem; color:rgba(255,255,255,.55); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; position:relative; }
+.session-timer { font-family:'DM Mono',monospace; font-size:2.6rem; font-weight:600; color:#fff; letter-spacing:-1px; line-height:1; position:relative; }
+.session-timer.paused { animation:pulse 1.4s infinite; color:var(--yellow); }
+.session-date { font-size:.75rem; color:rgba(255,255,255,.45); margin-top:6px; position:relative; }
+.session-body { padding:16px; }
+.progress-bar-wrap { margin-bottom:14px; }
+.progress-bar-header { display:flex; justify-content:space-between; font-size:.72rem; color:var(--text-muted); margin-bottom:5px; }
+.progress-bar { height:5px; background:var(--surface3); border-radius:3px; overflow:hidden; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--red-dark),var(--red)); border-radius:3px; transition:width .8s ease; }
+.progress-fill.over { background:linear-gradient(90deg,#00b866,var(--green)); }
+.break-banner {
+    display:none; background:var(--yellow-bg); border:1px solid rgba(245,166,35,.3);
+    border-radius:var(--radius); padding:9px 13px; margin-bottom:12px;
+    font-size:.8rem; color:var(--yellow); font-weight:600;
+    align-items:center; gap:8px;
+}
+.break-banner.active { display:flex; animation:slideDown .2s ease; }
+.break-duration { font-family:'DM Mono',monospace; margin-left:auto; }
+.geo-badge { font-size:.68rem; color:var(--text-dim); display:flex; align-items:center; gap:4px; margin-bottom:10px; }
+.session-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 
-        /* Live Clock */
-        .live-clock {
-            font-family: 'DM Mono', monospace;
-            font-size: 0.82rem;
-            font-weight: 500;
-            color: var(--text-muted);
-            background: var(--surface3);
-            padding: 7px 13px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            letter-spacing: 0.5px;
-        }
+/* ══════════ BUTTONS ══════════ */
+.btn {
+    padding:10px 15px; border:none; border-radius:var(--radius);
+    cursor:pointer; font-size:.82rem; font-weight:600; font-family:inherit;
+    transition:var(--transition); display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.btn:active { transform:scale(.97); }
+.btn-primary  { background:var(--red); color:#fff; }
+.btn-primary:hover  { background:var(--red-light); box-shadow:0 0 18px var(--red-glow); }
+.btn-success  { background:var(--green); color:#041a0f; }
+.btn-success:hover  { background:#12e882; }
+.btn-warning  { background:var(--yellow); color:#1a0f00; }
+.btn-warning:hover  { background:#ffb83a; }
+.btn-danger   { background:transparent; border:1px solid var(--border); color:var(--text); }
+.btn-danger:hover   { background:rgba(231,74,60,.12); border-color:#e74a3c; color:#e74a3c; }
+.btn-ghost    { background:var(--surface3); color:var(--text); border:1px solid var(--border); }
+.btn-ghost:hover    { background:var(--surface4); border-color:var(--border2); }
+.btn-full { grid-column:1/-1; }
+.btn-sm { padding:7px 11px; font-size:.76rem; }
+.btn:disabled { opacity:.38; cursor:not-allowed; transform:none!important; }
 
-        /* ════════════════════════════════════
-           القسم 3.2: المحتوى الرئيسي
-           ════════════════════════════════════ */
-        .main-grid {
-            display: grid;
-            grid-template-columns: 340px 1fr;
-            gap: 16px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+/* ══════════ SETTINGS ══════════ */
+.settings-grid { display:grid; gap:12px; }
+.field-row { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+.field { display:flex; flex-direction:column; gap:5px; }
+.field label { font-size:.67rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.7px; }
+.field input,.field select,.field textarea {
+    padding:9px 11px; background:var(--surface2); border:1.5px solid var(--border);
+    border-radius:var(--radius); color:var(--text); font-size:.85rem;
+    font-family:inherit; font-weight:500; transition:var(--transition);
+}
+.field input:focus,.field select:focus,.field textarea:focus {
+    outline:none; border-color:var(--red); box-shadow:0 0 0 3px var(--red-glow); background:var(--surface);
+}
+.field textarea { resize:vertical; min-height:56px; }
+.settings-divider { height:1px; background:var(--border); margin:2px 0; }
+.settings-actions { display:flex; gap:6px; margin-top:14px; flex-wrap:wrap; }
 
-        /* ── اللوح الجانبي ── */
-        .sidebar { display: flex; flex-direction: column; gap: 16px; }
+/* ══════════ STATS ROW ══════════ */
+.stats-row { display:grid; grid-template-columns:repeat(5,1fr); gap:11px; margin-bottom:14px; }
+.stat-card {
+    background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius-lg);
+    padding:15px; text-align:center; transition:var(--transition); cursor:default;
+    position:relative; overflow:hidden;
+}
+.stat-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg,transparent,var(--red),transparent); opacity:0;
+    transition:var(--transition);
+}
+.stat-card:hover { border-color:var(--border3); transform:translateY(-2px); box-shadow:var(--shadow); }
+.stat-card:hover::before { opacity:1; }
+.stat-icon { font-size:1.3rem; margin-bottom:5px; }
+.stat-label { font-size:.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:3px; }
+.stat-val { font-family:'DM Mono',monospace; font-size:1.2rem; font-weight:600; animation:countUp .3s ease; }
+.stat-val.positive { color:var(--green); }
+.stat-val.negative { color:var(--red); }
+.stat-val.neutral  { color:var(--yellow); }
 
-        /* ── البطاقة الأساسية ── */
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            box-shadow: var(--shadow);
-            animation: slideDown 0.3s ease;
-        }
-        .card-title {
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            margin-bottom: 18px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .card-title::before {
-            content: '';
-            width: 3px; height: 14px;
-            background: var(--red);
-            border-radius: 2px;
-        }
+/* ══════════ HEATMAP ══════════ */
+.heatmap-card { overflow-x:auto; }
+.heatmap-wrap { min-width:700px; }
+.heatmap-months { display:flex; gap:0; margin-bottom:4px; margin-left:24px; }
+.heatmap-month-label { font-size:.64rem; color:var(--text-dim); flex:1; text-align:center; }
+.heatmap-grid { display:flex; gap:3px; }
+.heatmap-weeks { display:flex; flex-direction:column; gap:3px; margin-right:6px; }
+.heatmap-day-label { font-size:.6rem; color:var(--text-dim); height:12px; line-height:12px; }
+.heatmap-cols { display:flex; gap:3px; }
+.heatmap-col { display:flex; flex-direction:column; gap:3px; }
+.heatmap-cell {
+    width:12px; height:12px; border-radius:3px;
+    background:var(--surface3); cursor:pointer;
+    transition:transform .1s, box-shadow .1s;
+    animation:heatIn .3s ease backwards;
+}
+.heatmap-cell:hover { transform:scale(1.4); box-shadow:0 2px 8px rgba(0,0,0,.4); z-index:10; }
+.heatmap-cell.h0 { background:var(--surface3); }
+.heatmap-cell.h1 { background:rgba(212,12,12,.25); }
+.heatmap-cell.h2 { background:rgba(212,12,12,.45); }
+.heatmap-cell.h3 { background:rgba(212,12,12,.65); }
+.heatmap-cell.h4 { background:rgba(212,12,12,.85); }
+.heatmap-cell.h5 { background:var(--red); box-shadow:0 0 6px var(--red-glow); }
+.heatmap-cell.today-cell { outline:2px solid var(--yellow); outline-offset:1px; }
+.heatmap-cell.weekend-cell { opacity:.5; }
+.heatmap-legend { display:flex; align-items:center; gap:6px; margin-top:8px; font-size:.68rem; color:var(--text-dim); }
+.heatmap-legend-cells { display:flex; gap:3px; }
+.heatmap-tooltip {
+    position:fixed; z-index:500; background:var(--surface); border:1px solid var(--border2);
+    border-radius:8px; padding:7px 11px; font-size:.75rem; pointer-events:none;
+    box-shadow:var(--shadow); display:none; white-space:nowrap;
+}
 
-        /* ════════════════════════════════════
-           القسم 3.3: بطاقة الجلسة النشطة
-           ════════════════════════════════════ */
-        .session-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-        }
-        .session-header {
-            background: linear-gradient(135deg, var(--red-dark), var(--red));
-            padding: 20px;
-            text-align: center;
-        }
-        .session-status {
-            font-size: 0.75rem;
-            color: rgba(255,255,255,0.7);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-        .session-timer {
-            font-family: 'DM Mono', monospace;
-            font-size: 2.8rem;
-            font-weight: 600;
-            color: white;
-            letter-spacing: -1px;
-            line-height: 1;
-        }
-        .session-timer.paused { animation: pulse 1.5s infinite; color: var(--yellow); }
-        .session-date {
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.6);
-            margin-top: 6px;
-        }
-        .session-body { padding: 16px; }
+/* ══════════ TABS ══════════ */
+.tabs { display:flex; gap:3px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:5px; flex-wrap:wrap; }
+.tab-btn {
+    flex:1; padding:8px 10px; background:transparent; border:none; border-radius:8px;
+    cursor:pointer; color:var(--text-muted); font-size:.78rem; font-weight:700;
+    font-family:inherit; transition:var(--transition); min-width:60px;
+}
+.tab-btn:hover { color:var(--text); background:var(--surface3); }
+.tab-btn.active { background:var(--red); color:#fff; }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; animation:slideDown .2s ease; }
 
-        /* ── شريط التقدم ── */
-        .progress-bar-wrap {
-            margin-bottom: 16px;
-        }
-        .progress-bar-header {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-        }
-        .progress-bar {
-            height: 6px;
-            background: var(--surface3);
-            border-radius: 3px;
-            overflow: hidden;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--red-dark), var(--red));
-            border-radius: 3px;
-            transition: width 1s ease;
-        }
-        .progress-fill.over { background: linear-gradient(90deg, var(--green), #00ff9d); }
+/* ══════════ TOOLBAR ══════════ */
+.toolbar { display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:12px; }
+.search-box { flex:1; min-width:160px; position:relative; }
+.search-box input {
+    width:100%; padding:8px 11px 8px 32px;
+    background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius);
+    color:var(--text); font-size:.83rem; font-family:inherit;
+}
+.search-box input:focus { outline:none; border-color:var(--red); }
+.search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text-dim); font-size:13px; pointer-events:none; }
+.filter-select { padding:7px 10px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-size:.8rem; font-family:inherit; cursor:pointer; }
+.filter-select:focus { outline:none; border-color:var(--red); }
 
-        /* ── أزرار الجلسة ── */
-        .session-btns {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-        .btn {
-            padding: 11px 16px;
-            border: none;
-            border-radius: var(--radius);
-            cursor: pointer;
-            font-size: 0.84rem;
-            font-weight: 600;
-            font-family: inherit;
-            transition: var(--transition);
-            display: flex; align-items: center; justify-content: center; gap: 6px;
-            letter-spacing: 0.2px;
-        }
-        .btn:active { transform: scale(0.97); }
-        .btn-primary  { background: var(--red);   color: white; }
-        .btn-primary:hover  { background: var(--red-light); box-shadow: 0 0 16px var(--red-glow); }
-        .btn-success  { background: var(--green);  color: #0a1a12; }
-        .btn-success:hover  { background: #00e890; }
-        .btn-warning  { background: var(--yellow); color: #1a1000; }
-        .btn-warning:hover  { background: #ffb733; }
-        .btn-danger   { background: transparent; border: 1px solid var(--border); color: var(--text); }
-        .btn-danger:hover   { background: rgba(231,74,60,0.15); border-color: #e74a3c; color: #e74a3c; }
-        .btn-ghost    { background: var(--surface3); color: var(--text); border: 1px solid var(--border); }
-        .btn-ghost:hover    { background: var(--surface2); border-color: var(--border2); }
-        .btn-full { grid-column: 1/-1; }
-        .btn-sm { padding: 7px 12px; font-size: 0.78rem; }
-        .btn:disabled { opacity:0.4; cursor:not-allowed; transform:none !important; }
+/* ══════════ TABLE ══════════ */
+.table-wrap { overflow-x:auto; border-radius:var(--radius-lg); border:1px solid var(--border); }
+table { width:100%; border-collapse:collapse; font-size:.8rem; }
+thead { background:var(--surface2); position:sticky; top:0; z-index:5; }
+th { padding:10px 13px; text-align:left; font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); border-bottom:1px solid var(--border); white-space:nowrap; }
+td { padding:9px 13px; border-bottom:1px solid var(--border); vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:var(--surface2); }
+.tr-empty td { text-align:center; color:var(--text-dim); padding:40px; }
+td input, td select { background:transparent; border:1px solid transparent; border-radius:5px; padding:4px 6px; color:var(--text); font-size:.79rem; font-family:'DM Mono',monospace; width:88px; transition:var(--transition); }
+td input:hover, td select:hover { border-color:var(--border2); background:var(--surface2); }
+td input:focus, td select:focus { outline:none; border-color:var(--red); background:var(--surface2); }
+td select { width:auto; font-family:inherit; cursor:pointer; }
 
-        /* حالة الاستراحة */
-        .break-banner {
-            display: none;
-            background: var(--yellow-bg);
-            border: 1px solid rgba(245,166,35,0.3);
-            border-radius: var(--radius);
-            padding: 10px 14px;
-            margin-bottom: 12px;
-            font-size: 0.83rem;
-            color: var(--yellow);
-            font-weight: 600;
-            align-items: center;
-            gap: 8px;
-        }
-        .break-banner.active { display: flex; animation: slideDown 0.2s ease; }
-        .break-duration {
-            font-family: 'DM Mono', monospace;
-            margin-left: auto;
-        }
+/* ══════════ BADGES ══════════ */
+.type-badge { padding:3px 8px; border-radius:20px; font-size:.69rem; font-weight:700; white-space:nowrap; }
+.type-work     { background:var(--blue-bg);   color:var(--blue); }
+.type-vacation { background:var(--green-bg);  color:var(--green); }
+.type-sick     { background:rgba(255,100,100,.13); color:#ff8585; }
+.type-holiday  { background:var(--yellow-bg); color:var(--yellow); }
+.type-partial  { background:var(--purple-bg); color:var(--purple); }
+.type-other    { background:var(--surface3);  color:var(--text-muted); }
 
-        /* ════════════════════════════════════
-           القسم 3.4: الإعدادات السريعة
-           ════════════════════════════════════ */
-        .settings-grid {
-            display: grid;
-            gap: 14px;
-        }
-        .field-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .field { display: flex; flex-direction: column; gap: 6px; }
-        .field label {
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-        }
-        .field input, .field select, .field textarea {
-            padding: 10px 12px;
-            background: var(--surface2);
-            border: 1.5px solid var(--border);
-            border-radius: var(--radius);
-            color: var(--text);
-            font-size: 0.875rem;
-            font-family: inherit;
-            font-weight: 500;
-            transition: var(--transition);
-        }
-        .field input:focus, .field select:focus, .field textarea:focus {
-            outline: none;
-            border-color: var(--red);
-            box-shadow: 0 0 0 3px var(--red-glow);
-            background: var(--surface);
-        }
-        .field textarea { resize: vertical; min-height: 60px; }
-        .field input[type=number]::-webkit-inner-spin-button { opacity:1; }
-        .settings-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 2px 0;
-        }
-        .settings-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 16px;
-            flex-wrap: wrap;
-        }
+/* ── tag chips ── */
+.tag-chip { display:inline-block; padding:2px 7px; border-radius:12px; font-size:.63rem; font-weight:700; margin:1px; white-space:nowrap; cursor:default; }
+.tag-meeting  { background:rgba(79,135,245,.15); color:var(--blue); border:1px solid rgba(79,135,245,.3); }
+.tag-office   { background:rgba(168,110,247,.15); color:var(--purple); border:1px solid rgba(168,110,247,.3); }
+.tag-field    { background:rgba(249,115,22,.15);  color:var(--orange); border:1px solid rgba(249,115,22,.3); }
+.tag-home     { background:rgba(16,208,118,.12);  color:var(--green);  border:1px solid rgba(16,208,118,.3); }
+.tag-training { background:rgba(34,211,238,.12);  color:var(--cyan);   border:1px solid rgba(34,211,238,.3); }
 
-        /* ════════════════════════════════════
-           القسم 3.5: بطاقات الإحصائيات
-           ════════════════════════════════════ */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        .stat-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 16px;
-            text-align: center;
-            transition: var(--transition);
-            cursor: default;
-        }
-        .stat-card:hover { border-color: var(--red); transform: translateY(-2px); box-shadow: var(--shadow); }
-        .stat-icon { font-size: 1.4rem; margin-bottom: 6px; }
-        .stat-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-        .stat-val {
-            font-family: 'DM Mono', monospace;
-            font-size: 1.3rem;
-            font-weight: 600;
-            animation: countUp 0.4s ease;
-        }
-        .stat-val.positive { color: var(--green); }
-        .stat-val.negative { color: var(--red); }
-        .stat-val.neutral  { color: var(--yellow); }
+.hours-good { color:var(--green); font-weight:700; }
+.hours-low  { color:var(--yellow); }
+.hours-zero { color:var(--text-dim); }
 
-        /* ════════════════════════════════════
-           القسم 3.6: منطقة المحتوى
-           ════════════════════════════════════ */
-        .content-area { display: flex; flex-direction: column; gap: 16px; }
+.row-actions { display:flex; gap:3px; }
+.action-btn { width:27px; height:27px; background:var(--surface3); border:1px solid var(--border); border-radius:6px; cursor:pointer; color:var(--text-muted); font-size:12px; display:flex; align-items:center; justify-content:center; transition:var(--transition); }
+.action-btn:hover.del  { background:rgba(231,74,60,.14); color:#e74a3c; border-color:#e74a3c; }
+.action-btn:hover.note { background:var(--blue-bg); color:var(--blue); border-color:var(--blue); }
+.action-btn:hover.tag  { background:var(--purple-bg); color:var(--purple); border-color:var(--purple); }
 
-        /* ── التبويبات ── */
-        .tabs {
-            display: flex;
-            gap: 4px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 6px;
-        }
-        .tab-btn {
-            flex: 1;
-            padding: 9px;
-            background: transparent;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            color: var(--text-muted);
-            font-size: 0.82rem;
-            font-weight: 700;
-            font-family: inherit;
-            transition: var(--transition);
-            letter-spacing: 0.3px;
-        }
-        .tab-btn:hover { color: var(--text); background: var(--surface3); }
-        .tab-btn.active { background: var(--red); color: white; }
+/* ══════════ CHARTS ══════════ */
+.chart-wrap { position:relative; height:240px; }
 
-        .tab-panel { display: none; }
-        .tab-panel.active { display: block; animation: slideDown 0.2s ease; }
+/* ══════════ MODALS ══════════ */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(6px); z-index:500; display:none; align-items:center; justify-content:center; padding:16px; }
+.modal-overlay.open { display:flex; animation:fadeIn .18s ease; }
+.modal { background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius-lg); padding:26px; width:100%; max-width:460px; max-height:90vh; overflow-y:auto; box-shadow:var(--shadow-lg); animation:slideUp .2s ease; }
+.modal.wide { max-width:640px; }
+.modal h3 { font-size:1.1rem; font-weight:800; margin-bottom:18px; display:flex; align-items:center; gap:8px; }
+.modal-fields { display:flex; flex-direction:column; gap:11px; }
+.modal-actions { display:flex; gap:7px; justify-content:flex-end; margin-top:18px; flex-wrap:wrap; }
 
-        /* ════════════════════════════════════
-           القسم 3.7: شريط الأدوات والبحث
-           ════════════════════════════════════ */
-        .toolbar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .search-box {
-            flex: 1;
-            min-width: 180px;
-            position: relative;
-        }
-        .search-box input {
-            width: 100%;
-            padding: 8px 12px 8px 34px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            color: var(--text);
-            font-size: 0.85rem;
-            font-family: inherit;
-        }
-        .search-box input:focus { outline:none; border-color:var(--red); }
-        .search-icon {
-            position: absolute;
-            left: 10px; top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-dim);
-            font-size: 14px;
-            pointer-events: none;
-        }
-        .filter-select {
-            padding: 8px 10px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            color: var(--text);
-            font-size: 0.82rem;
-            font-family: inherit;
-            cursor: pointer;
-        }
-        .filter-select:focus { outline:none; border-color:var(--red); }
+/* ══════════ ADV STATS ══════════ */
+.adv-stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:11px; }
+.adv-stat { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:13px; }
+.adv-stat-label { font-size:.68rem; color:var(--text-muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px; }
+.adv-stat-val { font-family:'DM Mono',monospace; font-size:1.05rem; font-weight:700; }
 
-        /* ════════════════════════════════════
-           القسم 3.8: الجدول
-           ════════════════════════════════════ */
-        .table-wrap {
-            overflow-x: auto;
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border);
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.83rem;
-        }
-        thead { background: var(--surface2); }
-        th {
-            padding: 10px 14px;
-            text-align: left;
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-muted);
-            border-bottom: 1px solid var(--border);
-            white-space: nowrap;
-        }
-        td {
-            padding: 10px 14px;
-            border-bottom: 1px solid var(--border);
-            vertical-align: middle;
-        }
-        tr:last-child td { border-bottom: none; }
-        tr:hover td { background: var(--surface2); }
-        .tr-empty td { text-align: center; color: var(--text-dim); padding: 40px; font-size: 0.9rem; }
+/* ══════════ TOAST ══════════ */
+.toast-container { position:fixed; top:66px; right:14px; z-index:999; display:flex; flex-direction:column; gap:7px; pointer-events:none; }
+.toast { background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius); padding:11px 15px; display:flex; align-items:center; gap:9px; box-shadow:var(--shadow); animation:slideRight .25s ease; pointer-events:all; min-width:230px; max-width:310px; }
+.toast-icon { font-size:17px; flex-shrink:0; }
+.toast-msg { font-size:.8rem; flex:1; }
+.toast-close { color:var(--text-dim); cursor:pointer; font-size:15px; }
+.toast-close:hover { color:var(--text); }
+.toast.success { border-left:3px solid var(--green); }
+.toast.error   { border-left:3px solid var(--red); }
+.toast.info    { border-left:3px solid var(--blue); }
+.toast.warning { border-left:3px solid var(--yellow); }
 
-        /* حقول قابلة للتعديل داخل الجدول */
-        td input, td select {
-            background: transparent;
-            border: 1px solid transparent;
-            border-radius: 5px;
-            padding: 4px 6px;
-            color: var(--text);
-            font-size: 0.82rem;
-            font-family: 'DM Mono', monospace;
-            width: 90px;
-            transition: var(--transition);
-        }
-        td input:hover, td select:hover { border-color: var(--border2); background: var(--surface2); }
-        td input:focus, td select:focus { outline: none; border-color: var(--red); background: var(--surface2); }
-        td select { width: auto; font-family: inherit; cursor: pointer; }
+/* ══════════ CALENDAR ══════════ */
+.modal-calendar { max-width:600px; }
+.cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; gap:9px; }
+.cal-nav-btn { width:32px; height:32px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; cursor:pointer; color:var(--text); font-size:15px; display:flex; align-items:center; justify-content:center; transition:var(--transition); flex-shrink:0; }
+.cal-nav-btn:hover { background:var(--surface3); border-color:var(--red); }
+.cal-month-label { font-size:1rem; font-weight:700; flex:1; text-align:center; }
+.cal-selects { display:flex; gap:5px; }
+.cal-selects select { padding:5px 8px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:.8rem; font-family:inherit; cursor:pointer; }
+.cal-selects select:focus { outline:none; border-color:var(--red); }
+.cal-legend { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; padding:9px 13px; background:var(--surface2); border-radius:var(--radius); border:1px solid var(--border); }
+.cal-legend-item { display:flex; align-items:center; gap:5px; font-size:.68rem; color:var(--text-muted); font-weight:600; }
+.cal-dot { width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+.cal-dot.work{background:var(--blue)} .cal-dot.vacation{background:var(--green)} .cal-dot.sick{background:#ff8080} .cal-dot.holiday{background:var(--yellow)} .cal-dot.planned{background:var(--purple)} .cal-dot.today{background:var(--red)}
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.cal-day-name { text-align:center; font-size:.64rem; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.5px; padding:5px 0; }
+.cal-day { aspect-ratio:1; border-radius:7px; border:1.5px solid transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:var(--transition); position:relative; min-height:40px; background:var(--surface2); gap:1px; }
+.cal-day:hover { border-color:var(--border2); background:var(--surface3); }
+.cal-day.empty { background:transparent; cursor:default; border-color:transparent; }
+.cal-day.today { border-color:var(--red)!important; }
+.cal-day.today .cal-day-num { color:var(--red); font-weight:800; }
+.cal-day.weekend .cal-day-num { color:var(--text-dim); }
+.cal-day.day-work     { background:var(--blue-bg);  border-color:rgba(79,135,245,.25); }
+.cal-day.day-vacation { background:var(--green-bg); border-color:rgba(16,208,118,.25); }
+.cal-day.day-sick     { background:rgba(255,128,128,.1); border-color:rgba(255,128,128,.25); }
+.cal-day.day-holiday  { background:var(--yellow-bg); border-color:rgba(245,166,35,.25); }
+.cal-day.day-planned  { background:var(--purple-bg); border-color:rgba(168,110,247,.3); }
+.cal-day-num { font-size:.79rem; font-weight:600; font-family:'DM Mono',monospace; line-height:1; }
+.cal-day-icon { font-size:.7rem; line-height:1; }
+.cal-planner { margin-top:14px; padding:13px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); }
+.cal-planner-title { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px; }
+.cal-planner-row { display:flex; gap:7px; align-items:flex-end; flex-wrap:wrap; }
+.cal-planner-row .field { flex:1; min-width:100px; }
+.cal-planned-list { margin-top:9px; display:flex; flex-direction:column; gap:5px; max-height:110px; overflow-y:auto; }
+.cal-planned-item { display:flex; align-items:center; justify-content:space-between; background:rgba(168,110,247,.08); border:1px solid rgba(168,110,247,.2); border-radius:6px; padding:6px 9px; font-size:.76rem; }
+.cal-planned-del { background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:13px; transition:var(--transition); }
+.cal-planned-del:hover { color:var(--red); }
+.cal-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin-top:12px; }
+.cal-sum-box { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:9px; text-align:center; }
+.cal-sum-val { font-family:'DM Mono',monospace; font-size:1.05rem; font-weight:700; }
+.cal-sum-lbl { font-size:.62rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-top:2px; }
 
-        /* شارات الأنواع */
-        .type-badge {
-            padding: 3px 8px;
-            border-radius: 20px;
-            font-size: 0.72rem;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-        .type-work     { background: var(--blue-bg);   color: var(--blue); }
-        .type-vacation { background: var(--green-bg);  color: var(--green); }
-        .type-sick     { background: rgba(255,100,100,0.15); color: #ff8080; }
-        .type-holiday  { background: var(--yellow-bg); color: var(--yellow); }
-        .type-partial  { background: rgba(168,85,247,0.15); color: var(--purple); }
-        .type-other    { background: var(--surface3);  color: var(--text-muted); }
+/* ══════════ PIN SCREEN ══════════ */
+#pin-screen { position:fixed; inset:0; z-index:9999; background:var(--bg); display:none; align-items:center; justify-content:center; flex-direction:column; }
+.pin-box { background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius-xl); padding:34px 28px; text-align:center; width:310px; box-shadow:var(--shadow-lg); }
+.pin-logo { font-size:2.2rem; margin-bottom:7px; }
+.pin-title { font-size:1.05rem; font-weight:800; margin-bottom:3px; }
+.pin-prompt { font-size:.8rem; color:var(--text-muted); margin-bottom:18px; }
+.pin-dots { display:flex; gap:11px; justify-content:center; margin-bottom:22px; }
+.pin-dot { width:15px; height:15px; border-radius:50%; border:2px solid var(--border2); background:transparent; transition:all .15s; }
+.pin-dot.filled { background:var(--red); border-color:var(--red); }
+.pin-dots.shake { animation:shake .4s ease; }
+.pin-pad { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+.pin-key { padding:13px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; font-size:1.05rem; font-weight:700; font-family:'DM Mono',monospace; transition:var(--transition); }
+.pin-key:hover { background:var(--surface3); border-color:var(--red); }
+.pin-key:active { transform:scale(.95); }
 
-        /* ── الساعات الصافية (اللون حسب القيمة) ── */
-        .hours-good { color: var(--green); font-weight: 700; }
-        .hours-low  { color: var(--yellow); }
-        .hours-zero { color: var(--text-dim); }
+/* ══════════ POMODORO ══════════ */
+.pomo-card { text-align:center; }
+.pomo-timer { font-family:'DM Mono',monospace; font-size:2rem; font-weight:600; color:var(--red); margin:7px 0; }
+.pomo-status { font-size:.75rem; color:var(--text-muted); margin-bottom:9px; }
+.pomo-dots { display:flex; gap:7px; justify-content:center; margin-bottom:11px; }
+.pomo-dot { width:9px; height:9px; border-radius:50%; border:2px solid var(--border2); background:transparent; transition:all .2s; }
+.pomo-dot.done { background:var(--green); border-color:var(--green); }
+.pomo-dot.active { background:var(--red); border-color:var(--red); animation:blink 1s infinite; }
+.pomo-btns { display:flex; gap:6px; }
 
-        /* ── أيقونات أزرار الجدول ── */
-        .row-actions { display: flex; gap: 4px; }
-        .action-btn {
-            width: 28px; height: 28px;
-            background: var(--surface3);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            cursor: pointer;
-            color: var(--text-muted);
-            font-size: 13px;
-            display: flex; align-items: center; justify-content: center;
-            transition: var(--transition);
-        }
-        .action-btn:hover.del { background: rgba(231,74,60,0.15); color: #e74a3c; border-color: #e74a3c; }
-        .action-btn:hover.note { background: var(--blue-bg); color: var(--blue); border-color: var(--blue); }
-        .action-btn:hover.edit { background: var(--green-bg); color: var(--green); border-color: var(--green); }
+/* ══════════ WEEK VIEW ══════════ */
+.week-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:7px; margin-bottom:12px; }
+.week-day { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:10px 6px; text-align:center; min-height:100px; transition:var(--transition); cursor:pointer; }
+.week-day:hover { border-color:var(--border2); background:var(--surface2); }
+.week-day.today { border-color:var(--red); box-shadow:0 0 12px rgba(212,12,12,.15); }
+.week-day.weekend { opacity:.55; }
+.week-day-name { font-size:.65rem; font-weight:700; color:var(--text-dim); text-transform:uppercase; }
+.week-day-num { font-size:.85rem; font-weight:700; font-family:'DM Mono',monospace; margin:3px 0; }
+.week-entry-type { font-size:.62rem; color:var(--text-muted); margin-bottom:2px; }
+.week-times { font-size:.68rem; color:var(--text-muted); }
+.week-hours { font-size:.88rem; font-weight:700; margin:3px 0; }
+.week-bar { height:3px; background:var(--surface3); border-radius:2px; overflow:hidden; margin-top:3px; }
+.week-bar-fill { height:100%; background:var(--red); border-radius:2px; }
+.week-empty { font-size:1rem; margin-top:14px; color:var(--text-dim); }
+.week-summary { display:flex; gap:18px; flex-wrap:wrap; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:11px 15px; font-size:.8rem; }
 
-        /* ════════════════════════════════════
-           القسم 3.9: الرسوم البيانية
-           ════════════════════════════════════ */
-        .chart-wrap {
-            position: relative;
-            height: 260px;
-        }
+/* ══════════ GOALS ══════════ */
+.goals-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:11px; }
+.goal-card { background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius-lg); padding:15px; transition:var(--transition); }
+.goal-card:hover { border-color:var(--border3); }
+.goal-label { font-size:.67rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.7px; margin-bottom:5px; }
+.goal-val { font-family:'DM Mono',monospace; font-size:1.35rem; font-weight:700; }
+.goal-sub { font-size:.69rem; color:var(--text-dim); margin-top:3px; }
+.goal-bar { height:5px; background:var(--surface3); border-radius:3px; overflow:hidden; margin-top:7px; }
+.goal-fill { height:100%; border-radius:3px; transition:width .5s ease; }
 
-        /* ════════════════════════════════════
-           القسم 3.10: النوافذ المنبثقة
-           ════════════════════════════════════ */
-        .modal-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(4px);
-            z-index: 500;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
-        .modal-overlay.open { display: flex; animation: slideDown 0.2s ease; }
-        .modal {
-            background: var(--surface);
-            border: 1px solid var(--border2);
-            border-radius: var(--radius-lg);
-            padding: 28px;
-            width: 100%;
-            max-width: 460px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        }
-        .modal h3 {
-            font-size: 1.2rem;
-            font-weight: 800;
-            margin-bottom: 20px;
-            display: flex; align-items: center; gap: 8px;
-        }
-        .modal-fields { display: flex; flex-direction: column; gap: 12px; }
-        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+/* ══════════ TO-DO ══════════ */
+.todo-item { display:flex; align-items:center; gap:9px; padding:8px 10px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; margin-bottom:5px; transition:var(--transition); }
+.todo-item:hover { border-color:var(--border2); }
+.todo-item.done .todo-text { text-decoration:line-through; color:var(--text-dim); }
+.todo-text { flex:1; font-size:.83rem; }
+.todo-input-row { display:flex; gap:7px; margin-bottom:11px; }
+.todo-input-row input { flex:1; }
 
-        /* ════════════════════════════════════
-           القسم 3.11: لوحة الإحصائيات المتقدمة
-           ════════════════════════════════════ */
-        .adv-stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-        }
-        .adv-stat {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 14px;
-        }
-        .adv-stat-label { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .adv-stat-val { font-family: 'DM Mono', monospace; font-size: 1.1rem; font-weight: 700; }
+/* ══════════ CALCULATOR ══════════ */
+.calc-result-box { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:13px; text-align:center; margin-top:11px; }
+.calc-hours { font-family:'DM Mono',monospace; font-size:1.9rem; font-weight:700; color:var(--green); }
+.calc-earn-val { font-size:.95rem; color:var(--yellow); margin-top:3px; }
 
-        /* ════════════════════════════════════
-           القسم 3.12: الإشعارات
-           ════════════════════════════════════ */
-        .toast-container {
-            position: fixed;
-            top: 70px; right: 16px;
-            z-index: 999;
-            display: flex; flex-direction: column; gap: 8px;
-            pointer-events: none;
-        }
-        .toast {
-            background: var(--surface);
-            border: 1px solid var(--border2);
-            border-radius: var(--radius);
-            padding: 12px 16px;
-            display: flex; align-items: center; gap: 10px;
-            box-shadow: var(--shadow);
-            animation: slideRight 0.3s ease;
-            pointer-events: all;
-            min-width: 240px;
-            max-width: 320px;
-        }
-        .toast-icon { font-size: 18px; flex-shrink: 0; }
-        .toast-msg { font-size: 0.83rem; flex: 1; }
-        .toast-close { color: var(--text-dim); cursor: pointer; font-size: 16px; }
-        .toast-close:hover { color: var(--text); }
-        .toast.success { border-left: 3px solid var(--green); }
-        .toast.error   { border-left: 3px solid var(--red); }
-        .toast.info    { border-left: 3px solid var(--blue); }
-        .toast.warning { border-left: 3px solid var(--yellow); }
+/* ══════════ TAGS MODAL ══════════ */
+.tag-selector { display:flex; flex-wrap:wrap; gap:7px; margin-top:6px; }
+.tag-option { padding:5px 12px; border-radius:20px; font-size:.75rem; font-weight:700; cursor:pointer; border:1.5px solid transparent; transition:var(--transition); opacity:.6; }
+.tag-option.selected { opacity:1; transform:scale(1.05); }
+.tag-option:hover { opacity:1; }
+.tag-option.meeting  { background:rgba(79,135,245,.12);  color:var(--blue);   border-color:rgba(79,135,245,.3); }
+.tag-option.office   { background:rgba(168,110,247,.12); color:var(--purple); border-color:rgba(168,110,247,.3); }
+.tag-option.field    { background:rgba(249,115,22,.12);  color:var(--orange); border-color:rgba(249,115,22,.3); }
+.tag-option.home     { background:rgba(16,208,118,.1);   color:var(--green);  border-color:rgba(16,208,118,.3); }
+.tag-option.training { background:rgba(34,211,238,.1);   color:var(--cyan);   border-color:rgba(34,211,238,.3); }
 
-        /* ════════════════════════════════════
-           القسم 3.13: مؤشر الاتصال
-           ════════════════════════════════════ */
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: var(--text-muted);
-        }
-        .status-dot {
-            width: 8px; height: 8px;
-            border-radius: 50%;
-            background: var(--green);
-            display: inline-block;
-            animation: blink 2s infinite;
-        }
-        .status-dot.offline { background: var(--red); animation: none; }
+/* ══════════ ARCHIVE ══════════ */
+.archive-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin-top:4px; }
+.archive-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:13px; text-align:center; cursor:pointer; transition:var(--transition); }
+.archive-card:hover { border-color:var(--red); transform:translateY(-2px); }
+.archive-year { font-size:1.3rem; font-weight:800; font-family:'DM Mono',monospace; }
+.archive-hours { font-size:.72rem; color:var(--text-muted); margin-top:3px; }
+.archive-days  { font-size:.68rem; color:var(--text-dim); }
+.archive-bar { height:3px; background:var(--surface3); border-radius:2px; overflow:hidden; margin-top:7px; }
+.archive-fill { height:100%; background:var(--red); border-radius:2px; }
 
-        /* ── شريط التقدم اليومي ── */
-        .day-progress {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-        .day-bar { flex: 1; height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
-        .day-bar-fill { height: 100%; background: var(--red); border-radius: 2px; }
+/* ══════════ PRODUCTIVITY ANALYSIS ══════════ */
+.prod-hour-grid { display:grid; grid-template-columns:repeat(24,1fr); gap:2px; margin-top:10px; }
+.prod-hour-cell { height:28px; border-radius:3px; background:var(--surface3); cursor:default; transition:transform .1s; position:relative; }
+.prod-hour-cell:hover { transform:scaleY(1.3); z-index:5; }
+.prod-hour-labels { display:grid; grid-template-columns:repeat(24,1fr); gap:2px; margin-top:3px; }
+.prod-hour-label { font-size:.52rem; color:var(--text-dim); text-align:center; }
+.prod-section-title { font-size:.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.7px; margin-bottom:8px; display:flex; align-items:center; gap:7px; }
+.prod-section-title::before { content:''; width:3px; height:12px; background:var(--red); border-radius:2px; }
 
-        /* ════════════════════════════════════
-           القسم 3.14: التجاوب مع الشاشات
-           ════════════════════════════════════ */
-        @media (max-width: 900px) {
-            .main-grid { grid-template-columns: 1fr; }
-            .stats-row { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 600px) {
-            body { padding: 8px; }
-            .stats-row { grid-template-columns: repeat(2, 1fr); }
-            .adv-stats-grid { grid-template-columns: 1fr 1fr; }
-            .topbar { padding: 10px 12px; }
-            .session-timer { font-size: 2rem; }
-            .tabs { overflow-x: auto; }
-        }
-        @media (max-width: 400px) {
-            .stats-row { grid-template-columns: 1fr 1fr; }
-            .session-btns { grid-template-columns: 1fr; }
-        }
+/* ══════════ LANG ══════════ */
+.lang-btn { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:4px 9px; cursor:pointer; color:var(--text); font-size:.75rem; font-weight:700; font-family:'DM Mono',monospace; transition:var(--transition); }
+.lang-btn:hover { border-color:var(--red); color:var(--red); }
+.lang-wrap { position:relative; }
+.lang-menu { position:absolute; top:40px; right:0; background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius); box-shadow:var(--shadow); z-index:200; min-width:120px; display:none; }
+.lang-menu.open { display:block; animation:slideDown .15s ease; }
+.lang-option { padding:9px 13px; font-size:.82rem; cursor:pointer; transition:var(--transition); display:flex; align-items:center; gap:7px; }
+.lang-option:hover { background:var(--surface2); color:var(--red); }
 
-        /* ════════════════════════════════════
-           القسم 3.15: عناصر مساعدة إضافية
-           ════════════════════════════════════ */
-        .divider { height: 1px; background: var(--border); margin: 12px 0; }
-        .text-muted { color: var(--text-muted); }
-        .text-sm { font-size: 0.78rem; }
-        .mono { font-family: 'DM Mono', monospace; }
-        .flex { display: flex; align-items: center; }
-        .gap-8 { gap: 8px; }
-        .mt-8 { margin-top: 8px; }
-        .mt-12 { margin-top: 12px; }
-        .fw-7 { font-weight: 700; }
+/* ══════════ MISC ══════════ */
+.divider { height:1px; background:var(--border); margin:10px 0; }
+.text-muted { color:var(--text-muted); }
+.text-sm { font-size:.76rem; }
+.mono { font-family:'DM Mono',monospace; }
+.flex { display:flex; align-items:center; }
+.gap-8 { gap:8px; }
+.mt-8 { margin-top:8px; }
+.fw-7 { font-weight:700; }
+.empty-state { text-align:center; padding:44px 24px; color:var(--text-dim); }
+.empty-state .es-icon { font-size:2.8rem; margin-bottom:11px; }
+.empty-state p { font-size:.86rem; }
+.geo-badge { font-size:.69rem; color:var(--text-dim); display:flex; align-items:center; gap:4px; }
+.note-text { font-size:.72rem; color:var(--text-muted); font-style:italic; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.section-sep { height:1px; background:linear-gradient(90deg,transparent,var(--border),transparent); margin:4px 0; }
+.mgr-note-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:.67rem; background:rgba(168,110,247,.12); color:var(--purple); border:1px solid rgba(168,110,247,.25); }
 
-        /* نص تنبيه الفراغ */
-        .empty-state {
-            text-align: center;
-            padding: 48px 24px;
-            color: var(--text-dim);
-        }
-        .empty-state .es-icon { font-size: 3rem; margin-bottom: 12px; }
-        .empty-state p { font-size: 0.88rem; }
+/* ══════════ RESPONSIVE ══════════ */
+@media(max-width:960px) {
+    .main-grid { grid-template-columns:1fr; }
+    .stats-row { grid-template-columns:repeat(3,1fr); }
+}
+@media(max-width:640px) {
+    body { padding:8px; }
+    .stats-row { grid-template-columns:repeat(2,1fr); }
+    .adv-stats-grid { grid-template-columns:1fr 1fr; }
+    .topbar { padding:9px 11px; }
+    .session-timer { font-size:2rem; }
+    .tabs { overflow-x:auto; }
+    .week-grid { grid-template-columns:repeat(4,1fr); }
+    .goals-grid { grid-template-columns:1fr 1fr; }
+    .heatmap-wrap { min-width:500px; }
+}
+@media(max-width:400px) {
+    .stats-row { grid-template-columns:1fr 1fr; }
+    .session-btns { grid-template-columns:1fr; }
+}
 
-        /* شريط الموقع الجغرافي */
-        .geo-badge {
-            font-size: 0.72rem;
-            color: var(--text-dim);
-            display: flex; align-items: center; gap: 4px;
-        }
-
-        /* ── ملاحظة (نص داخل الجدول) ── */
-        .note-text {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            font-style: italic;
-            max-width: 140px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        /* ══════════════════════════════════════════
-           التقويم الشهري
-           ══════════════════════════════════════════ */
-        .modal-calendar {
-            max-width: 600px;
-            width: 100%;
-        }
-        .cal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            gap: 10px;
-        }
-        .cal-nav-btn {
-            width: 34px; height: 34px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            cursor: pointer;
-            color: var(--text);
-            font-size: 16px;
-            display: flex; align-items: center; justify-content: center;
-            transition: var(--transition);
-            flex-shrink: 0;
-        }
-        .cal-nav-btn:hover { background: var(--surface3); border-color: var(--red); color: var(--red); }
-        .cal-month-label {
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: var(--text);
-            flex: 1;
-            text-align: center;
-            letter-spacing: -0.3px;
-        }
-        .cal-selects {
-            display: flex;
-            gap: 6px;
-        }
-        .cal-selects select {
-            padding: 5px 9px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 0.82rem;
-            font-family: inherit;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        .cal-selects select:focus { outline: none; border-color: var(--red); }
-
-        /* Legend */
-        .cal-legend {
-            display: flex;
-            gap: 14px;
-            flex-wrap: wrap;
-            margin-bottom: 14px;
-            padding: 10px 14px;
-            background: var(--surface2);
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-        }
-        .cal-legend-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.72rem;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-        .cal-dot {
-            width: 10px; height: 10px;
-            border-radius: 3px;
-            flex-shrink: 0;
-        }
-        .cal-dot.work     { background: var(--blue); }
-        .cal-dot.vacation { background: var(--green); }
-        .cal-dot.sick     { background: #ff8080; }
-        .cal-dot.holiday  { background: var(--yellow); }
-        .cal-dot.planned  { background: var(--purple); }
-        .cal-dot.today    { background: var(--red); }
-
-        /* Grid */
-        .cal-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-        }
-        .cal-day-name {
-            text-align: center;
-            font-size: 0.68rem;
-            font-weight: 700;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 6px 0;
-        }
-        .cal-day {
-            aspect-ratio: 1;
-            border-radius: 8px;
-            border: 1.5px solid transparent;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: var(--transition);
-            position: relative;
-            min-height: 44px;
-            background: var(--surface2);
-            gap: 2px;
-        }
-        .cal-day:hover { border-color: var(--border2); background: var(--surface3); }
-        .cal-day.empty { background: transparent; cursor: default; border-color: transparent; }
-        .cal-day.today { border-color: var(--red) !important; }
-        .cal-day.today .cal-day-num { color: var(--red); font-weight: 800; }
-        .cal-day.weekend .cal-day-num { color: var(--text-dim); }
-        .cal-day.day-work     { background: var(--blue-bg);              border-color: rgba(59,130,246,0.3); }
-        .cal-day.day-vacation { background: var(--green-bg);             border-color: rgba(0,208,132,0.3); }
-        .cal-day.day-sick     { background: rgba(255,128,128,0.12);      border-color: rgba(255,128,128,0.3); }
-        .cal-day.day-holiday  { background: var(--yellow-bg);            border-color: rgba(245,166,35,0.3); }
-        .cal-day.day-planned  { background: rgba(168,85,247,0.12);       border-color: rgba(168,85,247,0.35); }
-        .cal-day.day-planned:hover { border-color: var(--purple); }
-        .cal-day-num {
-            font-size: 0.82rem;
-            font-weight: 600;
-            font-family: 'DM Mono', monospace;
-            line-height: 1;
-        }
-        .cal-day-icon {
-            font-size: 0.75rem;
-            line-height: 1;
-        }
-
-        /* Vacation planner */
-        .cal-planner {
-            margin-top: 16px;
-            padding: 14px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-        }
-        .cal-planner-title {
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            margin-bottom: 10px;
-        }
-        .cal-planner-row {
-            display: flex;
-            gap: 8px;
-            align-items: flex-end;
-            flex-wrap: wrap;
-        }
-        .cal-planner-row .field { flex: 1; min-width: 110px; }
-        .cal-planned-list {
-            margin-top: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            max-height: 120px;
-            overflow-y: auto;
-        }
-        .cal-planned-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(168,85,247,0.1);
-            border: 1px solid rgba(168,85,247,0.25);
-            border-radius: 6px;
-            padding: 6px 10px;
-            font-size: 0.78rem;
-        }
-        .cal-planned-item span { color: var(--text-muted); }
-        .cal-planned-item strong { color: var(--purple); }
-        .cal-planned-del {
-            background: none;
-            border: none;
-            color: var(--text-dim);
-            cursor: pointer;
-            font-size: 14px;
-            padding: 0 2px;
-            transition: var(--transition);
-        }
-        .cal-planned-del:hover { color: var(--red); }
-
-        /* Month summary */
-        .cal-summary {
-            display: grid;
-            grid-template-columns: repeat(4,1fr);
-            gap: 8px;
-            margin-top: 14px;
-        }
-        .cal-sum-box {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 10px;
-            text-align: center;
-        }
-        .cal-sum-val { font-family: 'DM Mono', monospace; font-size: 1.1rem; font-weight: 700; }
-        .cal-sum-lbl { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-    </style>
+</style>
 </head>
 <body>
 
-<!-- حاوية الإشعارات -->
+<!-- Heatmap Tooltip -->
+<div id="heatmap-tooltip" class="heatmap-tooltip"></div>
+<!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
 
-<!-- ══════════════════════════════════════════
-     القسم 4: هيكل الصفحة
-     ══════════════════════════════════════════ -->
+<!-- PIN Screen -->
+<div id="pin-screen">
+  <div class="pin-box">
+    <div class="pin-logo">🔒</div>
+    <div class="pin-title">Sandata Zeit Pro</div>
+    <div class="pin-prompt" id="pin-prompt">PIN eingeben:</div>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+    </div>
+    <div class="pin-pad">
+      <button class="pin-key" onclick="pinPress('1')">1</button><button class="pin-key" onclick="pinPress('2')">2</button><button class="pin-key" onclick="pinPress('3')">3</button>
+      <button class="pin-key" onclick="pinPress('4')">4</button><button class="pin-key" onclick="pinPress('5')">5</button><button class="pin-key" onclick="pinPress('6')">6</button>
+      <button class="pin-key" onclick="pinPress('7')">7</button><button class="pin-key" onclick="pinPress('8')">8</button><button class="pin-key" onclick="pinPress('9')">9</button>
+      <button class="pin-key" onclick="pinPress('C')">C</button><button class="pin-key" onclick="pinPress('0')">0</button><button class="pin-key" onclick="pinPress('del')">⌫</button>
+    </div>
+  </div>
+</div>
+<div id="pin-confirm-code"></div>
 
-<!-- ── 4.1 شريط الرأس ── -->
+<!-- App Wrapper -->
+<div id="app-wrapper">
+
+<!-- TOPBAR -->
 <header class="topbar">
-    <div class="topbar-brand">
-        <div class="brand-logo">⏱</div>
-        <div>
-            <div class="brand-name">Sandata Zeit</div>
-        </div>
-        <span class="brand-version">Pro v2.0</span>
+  <div class="topbar-brand">
+    <div class="brand-logo">⏱</div>
+    <div>
+      <div class="brand-name">Sandata Zeit</div>
     </div>
-    <div class="topbar-actions">
-        <!-- مؤشر الاتصال -->
-        <div class="status-indicator">
-            <span class="status-dot" id="onlineDot"></span>
-            <span id="onlineLabel">Online</span>
-        </div>
-        <!-- ساعة مباشرة -->
-        <div class="live-clock" id="liveClock">--:--:--</div>
-        <!-- التقويم -->
-        <button class="icon-btn" onclick="openCalendar()" title="Kalender öffnen" style="font-size:18px">📅</button>
-        <!-- نسخ احتياطي -->
-        <button class="icon-btn" onclick="exportBackup()" title="Backup exportieren">💾</button>
-        <!-- استعادة -->
-        <button class="icon-btn" onclick="document.getElementById('restoreFile').click()" title="Backup wiederherstellen">📂</button>
-        <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="importBackup(this)">
-        <!-- تغيير الثيم -->
-        <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Design wechseln">🌙</button>
+    <span class="brand-version">Pro v3.0</span>
+  </div>
+  <div class="topbar-actions">
+    <div class="status-indicator">
+      <span class="status-dot" id="onlineDot"></span>
+      <span id="onlineLabel">Online</span>
     </div>
+    <div class="live-clock" id="liveClock">--:--:--</div>
+    <div class="lang-wrap">
+      <button class="lang-btn" id="lang-btn" onclick="toggleLangMenu()">DE</button>
+      <div class="lang-menu" id="lang-menu">
+        <div class="lang-option" onclick="setLang('de');toggleLangMenu()">🇩🇪 Deutsch</div>
+        <div class="lang-option" onclick="setLang('ar');toggleLangMenu()">🇸🇦 العربية</div>
+        <div class="lang-option" onclick="setLang('en');toggleLangMenu()">🇬🇧 English</div>
+      </div>
+    </div>
+    <button class="icon-btn" onclick="openCalendar()" title="Kalender">📅</button>
+    <button class="icon-btn" onclick="openModal('modal-calc')" title="Rechner">🧮</button>
+    <button class="icon-btn" onclick="openTodoModal()" title="To-Do">✅</button>
+    <button class="icon-btn" onclick="openReportModal()" title="Monatsbericht">📧</button>
+    <button class="icon-btn" onclick="openPinSetup()" title="PIN">🔒</button>
+    <button class="icon-btn" onclick="toggleEncryption()" id="enc-btn" title="Verschlüsselung" style="font-size:13px;color:var(--text-muted)">🔓 Verschl.</button>
+    <button class="icon-btn" onclick="exportBackup()" title="Backup">💾</button>
+    <button class="icon-btn" onclick="document.getElementById('restoreFile').click()" title="Restore">📂</button>
+    <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="importBackup(this)">
+    <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Thema">🌙</button>
+  </div>
 </header>
 
-<!-- ── 4.2 الشبكة الرئيسية ── -->
+<!-- MAIN GRID -->
 <div class="main-grid">
 
-    <!-- ════════════════════════
-         اللوح الجانبي
-         ════════════════════════ -->
-    <aside class="sidebar">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
 
-        <!-- بطاقة الجلسة النشطة -->
-        <div class="session-card">
-            <div class="session-header">
-                <div class="session-status" id="sessionStatus">Bereit für den Arbeitstag</div>
-                <div class="session-timer" id="sessionTimer">00:00:00</div>
-                <div class="session-date" id="sessionDate">--</div>
-            </div>
-            <div class="session-body">
-                <!-- شريط تقدم اليوم -->
-                <div class="progress-bar-wrap">
-                    <div class="progress-bar-header">
-                        <span>Tagesfortschritt</span>
-                        <span id="progressPct">0%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill" style="width:0%"></div>
-                    </div>
-                </div>
-                <!-- بانر الاستراحة -->
-                <div class="break-banner" id="breakBanner">
-                    ☕ Pause läuft
-                    <span class="break-duration mono" id="breakDuration">00:00</span>
-                </div>
-                <!-- الموقع الجغرافي -->
-                <div class="geo-badge" id="geoBadge" style="margin-bottom:10px;display:none">
-                    📍 <span id="geoText">Standort nicht verfügbar</span>
-                </div>
-                <!-- أزرار الجلسة -->
-                <div class="session-btns">
-                    <button id="btnCheckIn"  class="btn btn-success" onclick="doCheckIn()">✅ Check-In</button>
-                    <button id="btnBreak"    class="btn btn-warning" onclick="toggleBreak()" disabled>☕ Pause</button>
-                    <button id="btnCheckOut" class="btn btn-primary btn-full" onclick="doCheckOut()" disabled>🏁 Check-Out</button>
-                </div>
-            </div>
+    <!-- Session Card -->
+    <div class="session-card">
+      <div class="session-header">
+        <div class="session-status" id="sessionStatus">Bereit für den Arbeitstag</div>
+        <div class="session-timer" id="sessionTimer">00:00:00</div>
+        <div class="session-date" id="sessionDate">--</div>
+      </div>
+      <div class="session-body">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-header"><span>Tagesfortschritt</span><span id="progressPct">0%</span></div>
+          <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
         </div>
-
-        <!-- بطاقة الإعدادات -->
-        <div class="card">
-            <div class="card-title">⚙ Einstellungen</div>
-            <div class="settings-grid">
-                <div class="field-row">
-                    <div class="field">
-                        <label>Monat</label>
-                        <select id="monSelect" onchange="loadLogs()"></select>
-                    </div>
-                    <div class="field">
-                        <label>Jahr</label>
-                        <select id="yearSelect" onchange="loadLogs()"></select>
-                    </div>
-                </div>
-                <div class="field">
-                    <label>Soll-Stunden / Monat</label>
-                    <input type="number" id="sollH" value="160" min="0" max="500" oninput="updateStats()">
-                </div>
-                <div class="settings-divider"></div>
-                <div class="field-row">
-                    <div class="field">
-                        <label>Pause Standard</label>
-                        <select id="pauseI">
-                            <option value="0">0 Min</option>
-                            <option value="15">15 Min</option>
-                            <option value="30" selected>30 Min</option>
-                            <option value="45">45 Min</option>
-                            <option value="60">60 Min</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label>Erinnerung</label>
-                        <select id="reminderSel">
-                            <option value="0">Aus</option>
-                            <option value="4">Nach 4h</option>
-                            <option value="6" selected>Nach 6h</option>
-                            <option value="8">Nach 8h</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <!-- أزرار الإعدادات -->
-            <div class="settings-actions">
-                <button class="btn btn-ghost btn-sm" onclick="openAddModal()">＋ Manuell</button>
-                <button class="btn btn-ghost btn-sm" onclick="openExportModal()">📄 PDF</button>
-                <button class="btn btn-ghost btn-sm" onclick="doExportXLS()">📊 Excel</button>
-                <button class="btn btn-danger btn-sm" onclick="openClearModal()">🗑 Löschen</button>
-            </div>
+        <div class="break-banner" id="breakBanner">☕ Pause läuft <span class="break-duration mono" id="breakDuration">00:00</span></div>
+        <div class="geo-badge" id="geoBadge" style="display:none">📍 <span id="geoText">—</span></div>
+        <div class="session-btns">
+          <button id="btnCheckIn"  class="btn btn-success" onclick="doCheckIn()">✅ Check-In</button>
+          <button id="btnBreak"    class="btn btn-warning" onclick="toggleBreak()" disabled>☕ Pause</button>
+          <button id="btnCheckOut" class="btn btn-primary btn-full" onclick="doCheckOut()" disabled>🏁 Check-Out</button>
         </div>
+      </div>
+    </div>
 
-    </aside>
-
-    <!-- ════════════════════════
-         منطقة المحتوى الرئيسي
-         ════════════════════════ -->
-    <main class="content-area">
-
-        <!-- بطاقات الإحصائيات السريعة -->
-        <div class="stats-row">
-            <div class="stat-card">
-                <div class="stat-icon">⏱️</div>
-                <div class="stat-label">Ist-Stunden</div>
-                <div class="stat-val" id="s_ist">0,00</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🎯</div>
-                <div class="stat-label">Soll / Überstunden</div>
-                <div class="stat-val" id="s_extra">0,00</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">📊</div>
-                <div class="stat-label">⌀ pro Tag</div>
-                <div class="stat-val" id="s_avg">0,00</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">📅</div>
-                <div class="stat-label">Arbeitstage</div>
-                <div class="stat-val" id="s_days">0</div>
-            </div>
+    <!-- Settings Card -->
+    <div class="card">
+      <div class="card-title">⚙ Einstellungen</div>
+      <div class="settings-grid">
+        <div class="field-row">
+          <div class="field"><label id="lbl-month">Monat</label><select id="monSelect" onchange="loadLogs()"></select></div>
+          <div class="field"><label id="lbl-year">Jahr</label><select id="yearSelect" onchange="onYearChange()"></select></div>
         </div>
-
-        <!-- التبويبات -->
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('log',this)">📋 Protokoll</button>
-            <button class="tab-btn" onclick="switchTab('chart',this)">📈 Diagramm</button>
-            <button class="tab-btn" onclick="switchTab('advanced',this)">🔬 Analyse</button>
+        <div class="field-row">
+          <div class="field"><label id="lbl-sollh">Soll-Std/Monat</label><input type="number" id="sollH" value="160" min="0" max="500" oninput="updateStats()"></div>
+          <div class="field"><label id="lbl-goal">Monatsziel (h)</label><input type="number" id="monthlyGoal" value="160" min="0" max="500" oninput="renderGoals()"></div>
         </div>
-
-        <!-- ── تبويب السجل ── -->
-        <div class="tab-panel active" id="tab-log">
-            <div class="card" style="padding:16px">
-                <!-- شريط الأدوات -->
-                <div class="toolbar" style="margin-bottom:12px">
-                    <div class="search-box">
-                        <span class="search-icon">🔍</span>
-                        <input type="text" id="searchInput" placeholder="Suchen..." oninput="renderLogTable()">
-                    </div>
-                    <select class="filter-select" id="filterType" onchange="renderLogTable()">
-                        <option value="">Alle Typen</option>
-                        <option value="Arbeitszeit">Arbeitstag</option>
-                        <option value="Urlaub">Urlaub</option>
-                        <option value="Krank">Krank</option>
-                        <option value="Feiertag">Feiertag</option>
-                        <option value="Halbtag">Halbtag</option>
-                        <option value="Kleidtag">Kleidtag</option>
-                    </select>
-                    <button class="btn btn-ghost btn-sm" onclick="sortLogs()">↕️ Sortieren</button>
-                </div>
-
-                <!-- الجدول -->
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Datum</th>
-                                <th>Typ</th>
-                                <th>Von</th>
-                                <th>Bis</th>
-                                <th>Pause</th>
-                                <th>Netto</th>
-                                <th>Notiz</th>
-                                <th>Aktionen</th>
-                            </tr>
-                        </thead>
-                        <tbody id="logBody"></tbody>
-                    </table>
-                </div>
-
-                <!-- إجمالي الصفحة -->
-                <div class="flex gap-8 mt-8" style="justify-content:flex-end">
-                    <span class="text-sm text-muted" id="tableFooter">0 Einträge</span>
-                </div>
-            </div>
+        <div class="field"><label id="lbl-stundenlohn">Stundenlohn (€)</label><input type="number" id="stundenlohn" value="0" min="0" step="0.5" oninput="calcEarnings();renderGoals()"></div>
+        <div class="settings-divider"></div>
+        <div class="field-row">
+          <div class="field"><label>Pause Standard</label>
+            <select id="pauseI">
+              <option value="0">0 Min</option><option value="15">15 Min</option>
+              <option value="30" selected>30 Min</option><option value="45">45 Min</option><option value="60">60 Min</option>
+            </select>
+          </div>
+          <div class="field"><label>Erinnerung</label>
+            <select id="reminderSel">
+              <option value="0">Aus</option><option value="4">4h</option>
+              <option value="6" selected>6h</option><option value="8">8h</option>
+            </select>
+          </div>
         </div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn btn-ghost btn-sm" id="btn-add-manual" onclick="openAddModal()">＋ Manuell</button>
+        <button class="btn btn-ghost btn-sm" id="btn-export-pdf" onclick="openExportModal()">📄 PDF</button>
+        <button class="btn btn-ghost btn-sm" id="btn-export-xls" onclick="doExportXLS()">📊 Excel</button>
+        <button class="btn btn-ghost btn-sm" id="btn-copy-week" onclick="copyLastWeek()">🔁 Woche</button>
+        <button class="btn btn-danger btn-sm" id="btn-clear" onclick="openClearModal()">🗑 Löschen</button>
+      </div>
+    </div>
 
-        <!-- ── تبويب الرسم البياني ── -->
-        <div class="tab-panel" id="tab-chart">
-            <div class="card">
-                <div class="card-title">Monatsübersicht</div>
-                <div class="chart-wrap">
-                    <canvas id="hoursChart"></canvas>
-                </div>
-            </div>
-            <div class="card" style="margin-top:16px">
-                <div class="card-title">Jahresvergleich</div>
-                <div class="chart-wrap">
-                    <canvas id="yearChart"></canvas>
-                </div>
-            </div>
+    <!-- Pomodoro Card -->
+    <div class="card pomo-card">
+      <div class="card-title">🍅 Pomodoro</div>
+      <div class="pomo-status" id="pomo-status">Bereit</div>
+      <div class="pomo-timer" id="pomo-timer">25:00</div>
+      <div class="pomo-dots" id="pomo-dots"><span class="pomo-dot"></span><span class="pomo-dot"></span><span class="pomo-dot"></span><span class="pomo-dot"></span></div>
+      <div class="pomo-btns">
+        <button class="btn btn-primary" id="pomo-btn" onclick="pomoStart()" style="flex:1">▶ Start</button>
+        <button class="btn btn-ghost" onclick="pomoStop()">⏹</button>
+      </div>
+      <div class="field-row" style="margin-top:8px">
+        <div class="field"><label style="font-size:.63rem">Arbeit (min)</label><input type="number" value="25" min="1" max="90" style="padding:5px 8px;font-size:.78rem" oninput="pomo.workMin=parseInt(this.value)||25;if(!pomo.running)pomo.remaining=pomo.workMin*60;updatePomoUI()"></div>
+        <div class="field"><label style="font-size:.63rem">Pause (min)</label><input type="number" value="5" min="1" max="30" style="padding:5px 8px;font-size:.78rem" oninput="pomo.breakMin=parseInt(this.value)||5"></div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="content-area">
+
+    <!-- Stats Row -->
+    <div class="stats-row" id="stats-row-el">
+      <div class="stat-card"><div class="stat-icon">⏱️</div><div class="stat-label">Ist-Stunden</div><div class="stat-val" id="s_ist">0,00</div></div>
+      <div class="stat-card"><div class="stat-icon">🎯</div><div class="stat-label">Überstunden</div><div class="stat-val" id="s_extra">0,00</div></div>
+      <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-label">⌀ pro Tag</div><div class="stat-val" id="s_avg">0,00</div></div>
+      <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-label">Arbeitstage</div><div class="stat-val" id="s_days">0</div></div>
+      <div class="stat-card" id="earnings-card" style="display:none"><div class="stat-icon">💶</div><div class="stat-label">Verdienst</div><div class="stat-val positive" id="s_earnings">—</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('log',this)" data-lang="protocol">📋 Protokoll</button>
+      <button class="tab-btn" onclick="switchTab('chart',this)" data-lang="chart">📈 Diagramm</button>
+      <button class="tab-btn" onclick="switchTab('week',this)" data-lang="week">📅 Woche</button>
+      <button class="tab-btn" onclick="switchTab('goals',this)" data-lang="goals">🎯 Ziele</button>
+      <button class="tab-btn" onclick="switchTab('archive',this)">🗃 Archiv</button>
+      <button class="tab-btn" onclick="switchTab('advanced',this)" data-lang="analysis">🔬 Analyse</button>
+    </div>
+
+    <!-- Tab: Log -->
+    <div class="tab-panel active" id="tab-log">
+      <div class="card" style="padding:16px">
+        <div class="toolbar">
+          <div class="search-box"><span class="search-icon">🔍</span><input type="text" id="searchInput" placeholder="Suchen..." oninput="renderLogTable()"></div>
+          <select class="filter-select" id="filterType" onchange="renderLogTable()">
+            <option value="">Alle Typen</option>
+            <option value="Arbeitszeit">Arbeitstag</option><option value="Urlaub">Urlaub</option>
+            <option value="Krank">Krank</option><option value="Feiertag">Feiertag</option>
+            <option value="Halbtag">Halbtag</option><option value="Kleidtag">Kleidtag</option>
+          </select>
+          <select class="filter-select" id="filterTag" onchange="renderLogTable()">
+            <option value="">Alle Tags</option>
+            <option value="meeting">Meeting</option><option value="office">Büro</option>
+            <option value="field">Außendienst</option><option value="home">HomeOffice</option>
+            <option value="training">Schulung</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="sortLogs()">↕ Sort</button>
         </div>
-
-        <!-- ── تبويب التحليل المتقدم ── -->
-        <div class="tab-panel" id="tab-advanced">
-            <div class="card">
-                <div class="card-title">Erweiterte Analyse</div>
-                <div class="adv-stats-grid" id="advStats">
-                    <div class="adv-stat"><div class="adv-stat-label">Bester Tag</div><div class="adv-stat-val" id="a_best">—</div></div>
-                    <div class="adv-stat"><div class="adv-stat-label">Schlechtester Tag</div><div class="adv-stat-val" id="a_worst">—</div></div>
-                    <div class="adv-stat"><div class="adv-stat-label">Längste Serie</div><div class="adv-stat-val" id="a_streak">0 Tage</div></div>
-                    <div class="adv-stat"><div class="adv-stat-label">Gesamte Pausenzeit</div><div class="adv-stat-val" id="a_breaks">0 Min</div></div>
-                    <div class="adv-stat"><div class="adv-stat-label">Urlaubstage</div><div class="adv-stat-val" id="a_vacation">0</div></div>
-                    <div class="adv-stat"><div class="adv-stat-label">Kranktage</div><div class="adv-stat-val" id="a_sick">0</div></div>
-                    <div class="adv-stat"><div class="adv-stat-label">Leistungsquote</div><div class="adv-stat-val" id="a_perf">0%</div></div>
-                    <div class="adv-stat"><div class="adv-stat-label">Überstunden gesamt</div><div class="adv-stat-val" id="a_overtime">0,00 h</div></div>
-                    <div class="adv-stat"><div class="adv-stat-label">Fehlende Tage</div><div class="adv-stat-val" id="a_missing">0</div></div>
-                </div>
-            </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Datum</th><th>Typ</th><th>Von</th><th>Bis</th><th>Pause</th>
+              <th>Netto</th><th>Tags</th><th>Notiz</th><th>Aktionen</th>
+            </tr></thead>
+            <tbody id="logBody"></tbody>
+          </table>
         </div>
+        <div class="flex gap-8 mt-8" style="justify-content:flex-end">
+          <span class="text-sm text-muted" id="tableFooter">0 Einträge</span>
+        </div>
+      </div>
+    </div>
 
-    </main>
-</div>
+    <!-- Tab: Chart -->
+    <div class="tab-panel" id="tab-chart">
+      <div class="card"><div class="card-title">Monatsübersicht</div><div class="chart-wrap"><canvas id="hoursChart"></canvas></div></div>
+      <div class="card" style="margin-top:14px"><div class="card-title">Jahresvergleich</div><div class="chart-wrap"><canvas id="yearChart"></canvas></div></div>
+    </div>
 
-<!-- ══════════════════════════════════════════
-     القسم 4.3: النوافذ المنبثقة
-     ══════════════════════════════════════════ -->
+    <!-- Tab: Week -->
+    <div class="tab-panel" id="tab-week"></div>
 
-<!-- نافذة تصدير PDF -->
+    <!-- Tab: Goals -->
+    <div class="tab-panel" id="tab-goals"></div>
+
+    <!-- Tab: Archive -->
+    <div class="tab-panel" id="tab-archive"></div>
+
+    <!-- Tab: Analysis -->
+    <div class="tab-panel" id="tab-advanced"></div>
+
+  </main>
+</div><!-- end main-grid -->
+
+<!-- ═══════════════════ MODALS ═══════════════════ -->
+
+<!-- Export PDF -->
 <div class="modal-overlay" id="modal-export">
-    <div class="modal">
-        <h3>📄 PDF-Export</h3>
-        <div class="modal-fields">
-            <div class="field"><label>Mitarbeitername</label><input type="text" id="p_name" value="Abdul Naser Samno"></div>
-            <div class="field"><label>Personalnummer</label><input type="text" id="p_nr" value=""></div>
-            <div class="field"><label>Einsatzbetrieb</label><input type="text" id="p_company" value="SanData"></div>
-            <div class="field"><label>Einsatzort</label><input type="text" id="p_location" value="Stuging"></div>
-            <div class="field"><label>Unterschrift (Name)</label><input type="text" id="p_sign" value=""></div>
-        </div>
-        <div class="modal-actions">
-            <button class="btn btn-ghost" onclick="closeModal('modal-export')">Abbrechen</button>
-            <button class="btn btn-primary" onclick="exportPDF()">✓ PDF erstellen</button>
-        </div>
+  <div class="modal">
+    <h3>📄 PDF-Export (Tätigkeitsnachweis)</h3>
+    <div class="modal-fields">
+      <div class="field"><label>Mitarbeitername</label><input type="text" id="p_name" value="Sanono Abdul Naser"></div>
+      <div class="field"><label>Personalnummer</label><input type="text" id="p_nr" value=""></div>
+      <div class="field-row">
+        <div class="field"><label>Einsatzbetrieb</label><input type="text" id="p_company" value="SanData"></div>
+        <div class="field"><label>Einsatzort</label><input type="text" id="p_location" value="Staging"></div>
+      </div>
+      <div class="field"><label>Bemerkung für Manager</label><textarea id="p_mgr_note" placeholder="Optionale Bemerkung..." style="min-height:50px"></textarea></div>
+      <div class="field"><label>Unterschrift (Name)</label><input type="text" id="p_sign" value=""></div>
     </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-export')">Abbrechen</button>
+      <button class="btn btn-ghost btn-sm" onclick="sharePDFEmail()">📧 E-Mail</button>
+      <button class="btn btn-ghost btn-sm" onclick="printMonth()">🖨 Druck</button>
+      <button class="btn btn-primary" onclick="exportPDF()">✓ PDF erstellen</button>
+    </div>
+  </div>
 </div>
 
-<!-- نافذة إضافة يدوي -->
+<!-- Add Entry -->
 <div class="modal-overlay" id="modal-add">
-    <div class="modal">
-        <h3>➕ Tag hinzufügen</h3>
-        <div class="modal-fields">
-            <div class="field"><label>Datum</label><input type="date" id="m_date"></div>
-            <div class="field">
-                <label>Typ</label>
-                <select id="m_type" onchange="toggleManualFields()">
-                    <option value="Arbeitszeit">Arbeitstag</option>
-                    <option value="Urlaub">Urlaub</option>
-                    <option value="Krank">Krank</option>
-                    <option value="Feiertag">Feiertag</option>
-                    <option value="Halbtag">Halbtag (halber Tag)</option>
-                    <option value="Kleidtag">Kleidtag</option>
-                    <option value="Nicht Arbeitstag">Sonstiges</option>
-                </select>
-            </div>
-            <div id="timeFields">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                    <div class="field"><label>Von</label><input type="time" id="m_start" value="08:00"></div>
-                    <div class="field"><label>Bis</label><input type="time" id="m_end"   value="16:30"></div>
-                </div>
-                <div class="field"><label>Pause (Minuten)</label><input type="number" id="m_pause" value="30" min="0" max="480"></div>
-            </div>
-            <div class="field"><label>Notiz (optional)</label><textarea id="m_note" placeholder="Optionale Anmerkungen..."></textarea></div>
-            <div id="m_error" style="color:var(--red);font-size:0.82rem;display:none"></div>
+  <div class="modal">
+    <h3>➕ Tag hinzufügen</h3>
+    <div class="modal-fields">
+      <div class="field"><label>Datum</label><input type="date" id="m_date"></div>
+      <div class="field"><label>Typ</label>
+        <select id="m_type" onchange="toggleManualFields()">
+          <option value="Arbeitszeit">Arbeitstag</option><option value="Urlaub">Urlaub</option>
+          <option value="Krank">Krank</option><option value="Feiertag">Feiertag</option>
+          <option value="Halbtag">Halbtag</option><option value="Kleidtag">Kleidtag</option>
+          <option value="Nicht Arbeitstag">Sonstiges</option>
+        </select>
+      </div>
+      <div id="timeFields">
+        <div class="field-row">
+          <div class="field"><label>Von</label><input type="time" id="m_start" value="08:00"></div>
+          <div class="field"><label>Bis</label><input type="time" id="m_end" value="16:30"></div>
         </div>
-        <div class="modal-actions">
-            <button class="btn btn-ghost" onclick="closeModal('modal-add')">Abbrechen</button>
-            <button class="btn btn-success" onclick="confirmAdd()">✓ Hinzufügen</button>
+        <div class="field"><label>Pause (Minuten)</label><input type="number" id="m_pause" value="30" min="0" max="480"></div>
+      </div>
+      <div class="field"><label>Tags</label>
+        <div class="tag-selector" id="add-tag-selector">
+          <div class="tag-option meeting" onclick="this.classList.toggle('selected')" data-tag="meeting">Meeting</div>
+          <div class="tag-option office" onclick="this.classList.toggle('selected')" data-tag="office">Büro</div>
+          <div class="tag-option field" onclick="this.classList.toggle('selected')" data-tag="field">Außendienst</div>
+          <div class="tag-option home" onclick="this.classList.toggle('selected')" data-tag="home">HomeOffice</div>
+          <div class="tag-option training" onclick="this.classList.toggle('selected')" data-tag="training">Schulung</div>
         </div>
+      </div>
+      <div class="field"><label>Notiz (optional)</label><textarea id="m_note" placeholder="Anmerkungen..."></textarea></div>
+      <div id="m_error" style="color:var(--red);font-size:.8rem;display:none"></div>
     </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add')">Abbrechen</button>
+      <button class="btn btn-success" onclick="confirmAdd()">✓ Hinzufügen</button>
+    </div>
+  </div>
 </div>
 
-<!-- نافذة الحذف -->
+<!-- Clear -->
 <div class="modal-overlay" id="modal-clear">
-    <div class="modal">
-        <h3>⚠️ Monat löschen</h3>
-        <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:8px">
-            Alle Einträge des gewählten Monats werden unwiderruflich gelöscht.
-        </p>
-        <div class="modal-actions">
-            <button class="btn btn-ghost" onclick="closeModal('modal-clear')">Abbrechen</button>
-            <button class="btn btn-primary" onclick="confirmClear()">✓ Ja, löschen</button>
-        </div>
+  <div class="modal">
+    <h3>⚠️ Monat löschen</h3>
+    <p style="color:var(--text-muted);font-size:.86rem;margin-bottom:8px">Alle Einträge des Monats werden unwiderruflich gelöscht.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-clear')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="confirmClear()">✓ Löschen</button>
     </div>
+  </div>
 </div>
 
-<!-- نافذة تعديل الملاحظة -->
+<!-- Note -->
 <div class="modal-overlay" id="modal-note">
-    <div class="modal">
-        <h3>📝 Notiz bearbeiten</h3>
-        <input type="hidden" id="noteEntryId">
-        <div class="field"><textarea id="noteText" style="min-height:100px" placeholder="Notiz eingeben..."></textarea></div>
-        <div class="modal-actions">
-            <button class="btn btn-ghost" onclick="closeModal('modal-note')">Abbrechen</button>
-            <button class="btn btn-primary" onclick="saveNote()">✓ Speichern</button>
-        </div>
+  <div class="modal">
+    <h3>📝 Notiz</h3>
+    <input type="hidden" id="noteEntryId">
+    <div class="field"><textarea id="noteText" style="min-height:90px" placeholder="Notiz..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-note')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveNote()">✓ Speichern</button>
     </div>
+  </div>
 </div>
 
+<!-- Tags Modal -->
+<div class="modal-overlay" id="modal-tags">
+  <div class="modal">
+    <h3>🏷 Tags & Manager-Notiz</h3>
+    <div class="field">
+      <label>Tags für diesen Tag</label>
+      <div class="tag-selector" id="tag-selector" style="margin-top:6px"></div>
+    </div>
+    <div class="field" style="margin-top:14px">
+      <label>Manager-Notiz (erscheint im PDF)</label>
+      <textarea id="mgr-note-input" placeholder="Besondere Bemerkung für den Manager..." style="min-height:70px"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-tags')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveEntryTags()">✓ Speichern</button>
+    </div>
+  </div>
+</div>
 
-<!-- نافذة التقويم -->
+<!-- Calculator -->
+<div class="modal-overlay" id="modal-calc">
+  <div class="modal">
+    <h3>🧮 Stundenrechner</h3>
+    <div class="modal-fields">
+      <div class="field-row">
+        <div class="field"><label>Von</label><input type="time" id="calc-start" value="08:00" oninput="calcHours()"></div>
+        <div class="field"><label>Bis</label><input type="time" id="calc-end" value="16:30" oninput="calcHours()"></div>
+      </div>
+      <div class="field"><label>Pause (Minuten)</label><input type="number" id="calc-pause" value="30" min="0" oninput="calcHours()"></div>
+    </div>
+    <div class="calc-result-box"><div class="calc-hours" id="calc-result">—</div><div class="calc-earn-val" id="calc-earn"></div></div>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('modal-calc')">Schließen</button></div>
+  </div>
+</div>
+
+<!-- To-Do -->
+<div class="modal-overlay" id="modal-todo">
+  <div class="modal">
+    <h3>✅ To-Do – <span id="todo-date-label"></span></h3>
+    <input type="hidden" id="todo-date">
+    <div class="todo-input-row">
+      <input type="text" id="todo-input" placeholder="Neue Aufgabe..." onkeydown="if(event.key==='Enter')addTodo()">
+      <button class="btn btn-primary btn-sm" onclick="addTodo()">＋</button>
+    </div>
+    <div id="todo-list"></div>
+    <div class="modal-actions">
+      <div class="field" style="flex:1"><label>Datum</label><input type="date" id="todo-date-pick" oninput="document.getElementById('todo-date').value=this.value;document.getElementById('todo-date-label').textContent=this.value;renderTodoList(this.value)"></div>
+      <button class="btn btn-ghost" onclick="closeModal('modal-todo')">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Monthly Report -->
+<div class="modal-overlay" id="modal-report">
+  <div class="modal">
+    <h3>📧 Monatsbericht – <span id="report-period"></span></h3>
+    <div class="modal-fields">
+      <div class="field"><label>Empfänger E-Mail</label><input type="email" id="report-email" placeholder="manager@firma.de"></div>
+    </div>
+    <p style="font-size:.78rem;color:var(--text-muted);margin-top:10px">Ein vollständiger Arbeitszeitbericht mit allen Tagesdetails wird als E-Mail-Vorlage geöffnet.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-report')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="sendMonthlyReport()">📤 Bericht senden</button>
+    </div>
+  </div>
+</div>
+
+<!-- PIN Setup -->
+<div class="modal-overlay" id="modal-pin">
+  <div class="modal" style="max-width:320px;text-align:center">
+    <h3>🔒 PIN einrichten</h3>
+    <div class="pin-prompt" id="pin-setup-prompt" style="margin-bottom:12px">Neuen 4-stelligen PIN eingeben:</div>
+    <div class="pin-dots" id="pin-dots" style="justify-content:center;margin:14px 0"></div>
+    <div class="pin-pad" style="max-width:250px;margin:0 auto">
+      <button class="pin-key" onclick="pinPress('1')">1</button><button class="pin-key" onclick="pinPress('2')">2</button><button class="pin-key" onclick="pinPress('3')">3</button>
+      <button class="pin-key" onclick="pinPress('4')">4</button><button class="pin-key" onclick="pinPress('5')">5</button><button class="pin-key" onclick="pinPress('6')">6</button>
+      <button class="pin-key" onclick="pinPress('7')">7</button><button class="pin-key" onclick="pinPress('8')">8</button><button class="pin-key" onclick="pinPress('9')">9</button>
+      <button class="pin-key" onclick="pinPress('C')">C</button><button class="pin-key" onclick="pinPress('0')">0</button><button class="pin-key" onclick="pinPress('del')">⌫</button>
+    </div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn btn-danger btn-sm" onclick="removePIN()">Entfernen</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-pin')">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Calendar -->
 <div class="modal-overlay" id="modal-calendar">
-    <div class="modal modal-calendar">
-        <h3>📅 Kalender</h3>
-
-        <!-- التنقل بين الأشهر -->
-        <div class="cal-header">
-            <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
-            <span class="cal-month-label" id="calMonthLabel"></span>
-            <button class="cal-nav-btn" onclick="calNav(1)">›</button>
-            <div class="cal-selects">
-                <select id="calMonSel" onchange="calGoTo()"></select>
-                <select id="calYearSel" onchange="calGoTo()"></select>
-            </div>
-        </div>
-
-        <!-- وسيلة الإيضاح -->
-        <div class="cal-legend">
-            <div class="cal-legend-item"><div class="cal-dot work"></div> Gearbeitet</div>
-            <div class="cal-legend-item"><div class="cal-dot vacation"></div> Urlaub</div>
-            <div class="cal-legend-item"><div class="cal-dot sick"></div> Krank</div>
-            <div class="cal-legend-item"><div class="cal-dot holiday"></div> Feiertag</div>
-            <div class="cal-legend-item"><div class="cal-dot planned"></div> Geplant</div>
-            <div class="cal-legend-item"><div class="cal-dot today"></div> Heute</div>
-        </div>
-
-        <!-- شبكة التقويم -->
-        <div class="cal-grid" id="calGrid"></div>
-
-        <!-- ملخص الشهر -->
-        <div class="cal-summary">
-            <div class="cal-sum-box">
-                <div class="cal-sum-val" id="calSumWork" style="color:var(--blue)">0</div>
-                <div class="cal-sum-lbl">Arbeitstage</div>
-            </div>
-            <div class="cal-sum-box">
-                <div class="cal-sum-val" id="calSumVac" style="color:var(--green)">0</div>
-                <div class="cal-sum-lbl">Urlaub</div>
-            </div>
-            <div class="cal-sum-box">
-                <div class="cal-sum-val" id="calSumSick" style="color:#ff8080">0</div>
-                <div class="cal-sum-lbl">Krank</div>
-            </div>
-            <div class="cal-sum-box">
-                <div class="cal-sum-val" id="calSumPlanned" style="color:var(--purple)">0</div>
-                <div class="cal-sum-lbl">Geplant</div>
-            </div>
-        </div>
-
-        <!-- تخطيط الإجازات المستقبلية -->
-        <div class="cal-planner">
-            <div class="cal-planner-title">🗓 Urlaub planen</div>
-            <div class="cal-planner-row">
-                <div class="field">
-                    <label>Von</label>
-                    <input type="date" id="planFrom">
-                </div>
-                <div class="field">
-                    <label>Bis</label>
-                    <input type="date" id="planTo">
-                </div>
-                <div class="field" style="min-width:90px">
-                    <label>Typ</label>
-                    <select id="planType">
-                        <option value="Urlaub">Urlaub</option>
-                        <option value="Feiertag">Feiertag</option>
-                        <option value="Krank">Krank</option>
-                        <option value="Halbtag">Halbtag</option>
-                    </select>
-                </div>
-                <button class="btn btn-primary btn-sm" style="flex-shrink:0;align-self:flex-end" onclick="addPlannedVacation()">＋ Speichern</button>
-            </div>
-            <div class="cal-planned-list" id="plannedList"></div>
-        </div>
-
-        <div class="modal-actions" style="margin-top:16px">
-            <button class="btn btn-ghost" onclick="closeModal('modal-calendar')">Schließen</button>
-        </div>
+  <div class="modal modal-calendar wide">
+    <h3>📅 Kalender</h3>
+    <div class="cal-header">
+      <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+      <span class="cal-month-label" id="calMonthLabel"></span>
+      <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+      <div class="cal-selects">
+        <select id="calMonSel" onchange="calGoTo()"></select>
+        <select id="calYearSel" onchange="calGoTo()"></select>
+      </div>
     </div>
+    <div class="cal-legend">
+      <div class="cal-legend-item"><div class="cal-dot work"></div> Gearbeitet</div>
+      <div class="cal-legend-item"><div class="cal-dot vacation"></div> Urlaub</div>
+      <div class="cal-legend-item"><div class="cal-dot sick"></div> Krank</div>
+      <div class="cal-legend-item"><div class="cal-dot holiday"></div> Feiertag</div>
+      <div class="cal-legend-item"><div class="cal-dot planned"></div> Geplant</div>
+      <div class="cal-legend-item"><div class="cal-dot today"></div> Heute</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-summary">
+      <div class="cal-sum-box"><div class="cal-sum-val" id="calSumWork" style="color:var(--blue)">0</div><div class="cal-sum-lbl">Arbeitstage</div></div>
+      <div class="cal-sum-box"><div class="cal-sum-val" id="calSumVac" style="color:var(--green)">0</div><div class="cal-sum-lbl">Urlaub</div></div>
+      <div class="cal-sum-box"><div class="cal-sum-val" id="calSumSick" style="color:#ff8080">0</div><div class="cal-sum-lbl">Krank</div></div>
+      <div class="cal-sum-box"><div class="cal-sum-val" id="calSumPlanned" style="color:var(--purple)">0</div><div class="cal-sum-lbl">Geplant</div></div>
+    </div>
+    <div class="cal-planner">
+      <div class="cal-planner-title">🗓 Urlaub planen</div>
+      <div class="cal-planner-row">
+        <div class="field"><label>Von</label><input type="date" id="planFrom"></div>
+        <div class="field"><label>Bis</label><input type="date" id="planTo"></div>
+        <div class="field" style="min-width:80px"><label>Typ</label>
+          <select id="planType"><option value="Urlaub">Urlaub</option><option value="Feiertag">Feiertag</option><option value="Krank">Krank</option><option value="Halbtag">Halbtag</option></select>
+        </div>
+        <button class="btn btn-primary btn-sm" style="flex-shrink:0;align-self:flex-end" onclick="addPlannedVacation()">＋</button>
+      </div>
+      <div class="cal-planned-list" id="plannedList"></div>
+    </div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn btn-ghost" onclick="closeModal('modal-calendar')">Schließen</button>
+    </div>
+  </div>
 </div>
 
+</div><!-- end app-wrapper -->
+<div id="pin-confirm-code2"></div>
 
-<!-- ══════════════════════════════════════════
-     القسم 5: JavaScript - الإعدادات والحالة
-     ══════════════════════════════════════════ -->
 <script>
-
 // ════════════════════════════════════════════
 // 5.1 الإعدادات الثابتة
 // ════════════════════════════════════════════
@@ -1442,9 +1024,9 @@ const CONFIG = {
 
     // ── القيم الافتراضية (غيّرها هنا مرة واحدة) ──
     defaults: {
-        name:       'Abdul Naser Samno',
+        name:       'Sanono Abdul Naser',
         company:    'SanData',
-        location:   'Stuging',
+        location:   'Staging',
         sollH:      160,
         pause:      30,
         breakReminder: 6,  // تذكير بعد كم ساعة من العمل
@@ -1619,6 +1201,14 @@ function doCheckOut() {
         note:     '',
         geo:      state.session.geoLabel || ''
     };
+    // ── منع تكرار نفس اليوم عند Check-Out ──
+    if (state.logs.some(e => e.date === dateStr)) {
+        if (!confirm(`⚠️ Es existiert bereits ein Eintrag für ${dateStr}. Trotzdem überschreiben?`)) {
+            resetSessionUI();
+            return;
+        }
+        state.logs = state.logs.filter(e => e.date !== dateStr);
+    }
     saveEntry(entry);
     resetSessionUI();
     tryGetLocation('out');
@@ -1734,73 +1324,7 @@ function resetSessionUI() {
 // القسم 8: الواجهة - الجدول والإحصائيات
 // ════════════════════════════════════════════
 
-function renderLogTable() {
-    const search = document.getElementById('searchInput')?.value.toLowerCase() || '';
-    const ftype  = document.getElementById('filterType')?.value || '';
-    const tbody  = document.getElementById('logBody');
-
-    let filtered = state.logs.filter(e => {
-        const matchSearch = !search ||
-            e.date?.includes(search) ||
-            e.start?.includes(search) ||
-            (e.note||'').toLowerCase().includes(search) ||
-            (e.type||'').toLowerCase().includes(search);
-        const matchType = !ftype || e.type === ftype;
-        return matchSearch && matchType;
-    });
-
-    if (!filtered.length) {
-        tbody.innerHTML = `<tr class="tr-empty"><td colspan="8"><div class="empty-state">
-            <div class="es-icon">📭</div>
-            <p>Keine Einträge für diesen Monat</p>
-        </div></td></tr>`;
-        document.getElementById('tableFooter').textContent = '0 Einträge';
-        return;
-    }
-
-    tbody.innerHTML = filtered.map(e => {
-        const cfg = CONFIG.ENTRY_TYPES[e.type] || CONFIG.ENTRY_TYPES['Nicht Arbeitstag'];
-        const isWork = e.type === 'Arbeitszeit' || e.type === 'Halbtag';
-        const h = parseFloat(e.duration||0);
-        const hClass = h >= 8 ? 'hours-good' : h > 0 ? 'hours-low' : 'hours-zero';
-        const [y,m,d] = (e.date||'').split('-');
-        const dateLabel = d && m ? `${d}.${m}` : (e.date||'—');
-        const dayName = e.date ? new Date(e.date+'T12:00').toLocaleDateString('de-DE',{weekday:'short'}) : '';
-
-        return `<tr>
-            <td>
-                <div style="font-weight:700;font-size:0.88rem" class="mono">${dateLabel}</div>
-                <div style="font-size:0.7rem;color:var(--text-muted)">${dayName}</div>
-            </td>
-            <td>
-                <span class="type-badge ${cfg.badge}">${cfg.icon} ${cfg.label}</span>
-            </td>
-            <td>
-                ${isWork ? `<input type="time" value="${e.start||''}" onchange="updateField(${e.id},'start',this.value)">` : '<span class="text-muted">—</span>'}
-            </td>
-            <td>
-                ${isWork ? `<input type="time" value="${e.end||''}"   onchange="updateField(${e.id},'end',this.value)">` : '<span class="text-muted">—</span>'}
-            </td>
-            <td>
-                ${isWork ? `<input type="number" value="${e.pause||0}" min="0" max="480" style="width:60px" onchange="updateField(${e.id},'pause',this.value)">` : '<span class="text-muted">—</span>'}
-            </td>
-            <td>
-                <span class="mono fw-7 ${hClass}">${h > 0 ? h.toFixed(2).replace('.',',') + ' h' : '—'}</span>
-            </td>
-            <td>
-                <span class="note-text" title="${e.note||''}">${e.note || '<span style="color:var(--text-dim)">—</span>'}</span>
-            </td>
-            <td>
-                <div class="row-actions">
-                    <button class="action-btn note" onclick="openNoteModal(${e.id})" title="Notiz">📝</button>
-                    <button class="action-btn del"  onclick="deleteEntry(${e.id})" title="Löschen">🗑️</button>
-                </div>
-            </td>
-        </tr>`;
-    }).join('');
-
-    document.getElementById('tableFooter').textContent = `${filtered.length} Eintrag${filtered.length !== 1 ? 'e' : ''}`;
-}
+// renderLogTable is defined later in the v3 section with full tag support
 
 function updateStats() {
     const workDays = state.logs.filter(e => e.type==='Arbeitszeit' || e.type==='Halbtag');
@@ -1816,48 +1340,8 @@ function updateStats() {
     const extraEl = document.getElementById('s_extra');
     extraEl.textContent = (diff >= 0 ? '+' : '') + diff.toFixed(2).replace('.',',') + ' h';
     extraEl.className   = 'stat-val ' + (diff > 0 ? 'positive' : diff < 0 ? 'negative' : 'neutral');
-}
 
-function updateAdvanced() {
-    const workDays = state.logs.filter(e => e.type==='Arbeitszeit' || e.type==='Halbtag');
-    const soll     = parseFloat(document.getElementById('sollH')?.value || 160);
-    const ist      = workDays.reduce((s,e) => s + parseFloat(e.duration||0), 0);
-
-    // أفضل وأسوأ يوم
-    let best='—', worst='—', bestH=0, worstH=999;
-    workDays.forEach(e => {
-        const h = parseFloat(e.duration||0);
-        if (h > bestH)  { bestH  = h; best  = e.date?.split('-').slice(1).reverse().join('.') + ` (${h.toFixed(1)}h)`; }
-        if (h < worstH) { worstH = h; worst = e.date?.split('-').slice(1).reverse().join('.') + ` (${h.toFixed(1)}h)`; }
-    });
-
-    // الأيام المتتالية
-    let streak = 0, maxStreak = 0, prev = null;
-    workDays.forEach(e => {
-        const d = new Date(e.date);
-        if (prev) {
-            const diff = (d - prev) / 86400000;
-            streak = diff === 1 ? streak + 1 : 1;
-        } else { streak = 1; }
-        if (streak > maxStreak) maxStreak = streak;
-        prev = d;
-    });
-
-    const totalBreaks = state.logs.reduce((s,e) => s + parseInt(e.pause||0), 0);
-    const vacDays     = state.logs.filter(e=>e.type==='Urlaub').length;
-    const sickDays    = state.logs.filter(e=>e.type==='Krank').length;
-    const perf        = soll > 0 ? Math.round((ist / soll) * 100) : 0;
-    const overtime    = Math.max(0, ist - soll);
-
-    document.getElementById('a_best').textContent    = best;
-    document.getElementById('a_worst').textContent   = worst;
-    document.getElementById('a_streak').textContent  = maxStreak + ' Tage';
-    document.getElementById('a_breaks').textContent  = totalBreaks + ' Min';
-    document.getElementById('a_vacation').textContent= vacDays;
-    document.getElementById('a_sick').textContent    = sickDays;
-    document.getElementById('a_perf').textContent    = perf + '%';
-    document.getElementById('a_overtime').textContent= overtime.toFixed(2).replace('.',',') + ' h';
-    document.getElementById('a_missing').textContent = Math.max(0, Math.round(soll/8) - workDays.length);
+    calcEarnings();
 }
 
 // ════════════════════════════════════════════
@@ -1956,91 +1440,323 @@ function drawYearChart() {
 function exportPDF() {
     if (typeof jspdf === 'undefined') { toast('PDF-Bibliothek lädt noch...','warning'); return; }
     const { jsPDF } = jspdf;
-    const doc  = new jsPDF();
-    const name = document.getElementById('p_name').value;
-    const comp = document.getElementById('p_company').value;
-    const loc  = document.getElementById('p_location').value;
-    const nr   = document.getElementById('p_nr').value;
-    const sign = document.getElementById('p_sign').value;
+    const doc  = new jsPDF({ unit:'mm', format:'a4' });
+    const name = document.getElementById('p_name').value || CONFIG.defaults.name;
+    const comp = document.getElementById('p_company').value || CONFIG.defaults.company;
+    const loc  = document.getElementById('p_location').value || CONFIG.defaults.location;
     const mi   = parseInt(document.getElementById('monSelect').value);
     const yr   = document.getElementById('yearSelect').value;
     const monthName = CONFIG.months[mi];
 
-    // ── رأس الصفحة ──
-    doc.setFillColor(212,12,12);
-    doc.rect(0, 0, 210, 28, 'F');
-    doc.setTextColor(255,255,255);
-    doc.setFontSize(16); doc.setFont('helvetica','bold');
-    doc.text('Arbeitszeitnachweis', 14, 12);
-    doc.setFontSize(10); doc.setFont('helvetica','normal');
-    doc.text(`${monthName} ${yr}`, 14, 20);
-    doc.text(`${comp} | ${loc}`, 105, 20, {align:'center'});
+    // ── Hilfsfunktionen ──
+    const W = 210, H = 297;
+    const mL = 12, mR = 198; // left/right margin
+    const pageW = mR - mL;   // 186mm
 
-    // ── معلومات الموظف ──
-    doc.setTextColor(40,40,40);
-    doc.setFontSize(9);
-    const infoY = 34;
-    doc.text(`Mitarbeiter: ${name}`, 14, infoY);
-    if (nr) doc.text(`Personalnr.: ${nr}`, 100, infoY);
-    doc.text(`Erstellt: ${new Date().toLocaleDateString('de-DE')}`, 14, infoY+6);
-
-    // ── الجدول ──
-    const workDays = state.logs.filter(e=>e.type==='Arbeitszeit'||e.type==='Halbtag');
-    const totalIst = workDays.reduce((s,e)=>s+parseFloat(e.duration||0),0);
-    const soll     = parseFloat(document.getElementById('sollH').value)||160;
-
-    const rows = state.logs.map(e => {
-        const [y,m,d] = (e.date||'').split('-');
-        const dateStr = d && m ? `${d}.${m}.${y}` : (e.date||'—');
-        const dayName = e.date ? new Date(e.date+'T12:00').toLocaleDateString('de-DE',{weekday:'short'}) : '';
-        const cfg = CONFIG.ENTRY_TYPES[e.type]||CONFIG.ENTRY_TYPES['Nicht Arbeitstag'];
-        return [
-            `${dayName} ${dateStr}`,
-            cfg.label,
-            e.start||'—',
-            e.end||'—',
-            e.pause ? e.pause+' Min' : '—',
-            parseFloat(e.duration||0) > 0 ? parseFloat(e.duration).toFixed(2).replace('.',',')+' h' : '—',
-            e.note||''
-        ];
-    });
-
-    doc.autoTable({
-        head: [['Datum','Typ','Von','Bis','Pause','Netto','Notiz']],
-        body: rows,
-        startY: infoY + 14,
-        styles: { fontSize:8.5, cellPadding:3 },
-        headStyles: { fillColor:[212,12,12], textColor:255, fontStyle:'bold' },
-        alternateRowStyles: { fillColor:[248,248,248] },
-        columnStyles: { 6: { cellWidth:35 } }
-    });
-
-    // ── ملخص ──
-    const finalY = doc.lastAutoTable.finalY + 8;
-    doc.setFillColor(245,245,245);
-    doc.rect(14, finalY, 182, 22, 'F');
-    doc.setFontSize(9);
-    doc.setTextColor(40,40,40);
-    doc.text(`Ist-Stunden gesamt: ${totalIst.toFixed(2).replace('.',',')} h`, 18, finalY+7);
-    doc.text(`Soll-Stunden: ${soll.toFixed(2).replace('.',',')} h`, 80, finalY+7);
-    const diff = totalIst-soll;
-    doc.text(`Differenz: ${(diff>=0?'+':'')+diff.toFixed(2).replace('.',',')} h`, 145, finalY+7);
-    doc.text(`Arbeitstage: ${workDays.length}`, 18, finalY+16);
-
-    // ── توقيع ──
-    if (sign) {
-        doc.setFontSize(8);
-        doc.text(`Unterschrift: ${sign}`, 14, finalY+32);
-        doc.line(14, finalY+28, 80, finalY+28);
+    function cell(x, y, w, h, txt, opts={}) {
+        doc.rect(x, y, w, h);
+        if (txt !== undefined && txt !== null && txt !== '') {
+            const align  = opts.align  || 'left';
+            const bold   = opts.bold   || false;
+            const size   = opts.size   || 8;
+            const color  = opts.color  || [0,0,0];
+            doc.setFontSize(size);
+            doc.setFont('helvetica', bold ? 'bold' : 'normal');
+            doc.setTextColor(...color);
+            let tx = x + (opts.padL !== undefined ? opts.padL : 1.5);
+            let ty = y + h/2 + size * 0.35 * 0.352778;
+            if (align === 'center') tx = x + w/2;
+            if (align === 'right')  tx = x + w - 1.5;
+            doc.text(String(txt), tx, ty, { align });
+        }
     }
 
-    // ── تذييل الصفحة ──
-    doc.setFontSize(7); doc.setTextColor(160,160,160);
-    doc.text('Sandata Arbeitszeit Pro | Vertraulich', 105, 290, {align:'center'});
+    function filledCell(x, y, w, h, r, g, b) {
+        doc.setFillColor(r,g,b);
+        doc.rect(x, y, w, h, 'FD');
+    }
 
-    doc.save(`Arbeitszeit_${name.replace(/ /g,'_')}_${monthName}_${yr}.pdf`);
+    function txt(x, y, s, size=8, bold=false, color=[0,0,0]) {
+        doc.setFontSize(size);
+        doc.setFont('helvetica', bold ? 'bold' : 'normal');
+        doc.setTextColor(...color);
+        doc.text(String(s), x, y);
+    }
+
+    // ══════════════════════════════════════
+    // HEADER – blauer Balken oben
+    // ══════════════════════════════════════
+    doc.setFillColor(31, 97, 141);   // blau ähnlich puro personal
+    doc.rect(0, 0, W, 16, 'F');
+
+    // "puro" in weiß bold + "personal" normal
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(16); doc.setFont('helvetica','bold');
+    doc.text('puro', 14, 11);
+    doc.setFont('helvetica','normal');
+    doc.text('personal', 30, 11);
+
+    // ══════════════════════════════════════
+    // Titel + Felder
+    // ══════════════════════════════════════
+    let curY = 22;
+    txt(mL, curY, 'Tätigkeitsnachweis', 13, true, [0,0,0]);
+
+    curY = 30;
+    // Einsatzbetrieb / Einsatzort
+    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(0,0,0);
+    doc.text('Einsatzbetrieb:', mL, curY);
+    doc.line(mL+28, curY+0.5, mL+72, curY+0.5);
+    doc.setFont('helvetica','bold');
+    doc.text(comp, mL+29, curY);
+    doc.setFont('helvetica','normal');
+    doc.text('Einsatzort:', mL+78, curY);
+    doc.line(mL+96, curY+0.5, mR, curY+0.5);
+    doc.setFont('helvetica','bold');
+    doc.text(loc, mL+97, curY);
+    doc.setFont('helvetica','normal');
+
+    curY += 7;
+    doc.text('Mitarbeiter', mL, curY);
+    doc.text('(Name / Vorname):', mL, curY+4);
+    doc.line(mL+33, curY+4.5, mR, curY+4.5);
+    doc.setFont('helvetica','bold');
+    doc.text(name, mL+34, curY+4);
+    doc.setFont('helvetica','normal');
+
+    curY += 12;
+    doc.text('Monat / Jahr:', mL, curY);
+    doc.line(mL+24, curY+0.5, mL+70, curY+0.5);
+    doc.setFont('helvetica','bold');
+    doc.text(`${monthName} / ${yr}`, mL+25, curY);
+    doc.setFont('helvetica','normal');
+
+    // ══════════════════════════════════════
+    // Doppel-Tabelle (links Tage 1-16, rechts 17-31)
+    // ══════════════════════════════════════
+    curY += 6;
+
+    // Spaltenbreiten je Tabelle
+    // Tag | Beginn | Ende | P30 | P45 | P60 | Arbeitsstunden
+    const tW = pageW / 2 - 2;  // ~91mm
+    const colW = [8, 14, 14, 7, 7, 7, 17]; // = 74mm ... skalieren
+    const scale = tW / colW.reduce((a,b)=>a+b,0);
+    const cW = colW.map(w => w * scale);
+    const rowH = 5.4;
+    const headerH = 11;
+
+    function drawTable(startX, startDay, endDay, showGesamtstunden) {
+        let x = startX;
+        let y = curY;
+
+        // ── Header Zeile 1 ──
+        filledCell(x, y, cW[0], headerH, 200,200,200);
+        doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.setTextColor(0,0,0);
+        doc.text('Tag', x + cW[0]/2, y + 4, {align:'center'});
+
+        filledCell(x+cW[0], y, cW[1], headerH, 200,200,200);
+        doc.text('Beginn', x+cW[0]+cW[1]/2, y+4, {align:'center'});
+
+        filledCell(x+cW[0]+cW[1], y, cW[2], headerH, 200,200,200);
+        doc.text('Ende', x+cW[0]+cW[1]+cW[2]/2, y+4, {align:'center'});
+
+        const pauseX = x+cW[0]+cW[1]+cW[2];
+        const pauseW = cW[3]+cW[4]+cW[5];
+        filledCell(pauseX, y, pauseW, headerH/2, 200,200,200);
+        doc.text('Pause (min)', pauseX + pauseW/2, y+3.2, {align:'center'});
+        // Sub-Header P30/P45/P60
+        filledCell(pauseX,          y+headerH/2, cW[3], headerH/2, 200,200,200);
+        filledCell(pauseX+cW[3],    y+headerH/2, cW[4], headerH/2, 200,200,200);
+        filledCell(pauseX+cW[3]+cW[4], y+headerH/2, cW[5], headerH/2, 200,200,200);
+        doc.setFontSize(6.5);
+        doc.text('30', pauseX+cW[3]/2,          y+headerH/2+3, {align:'center'});
+        doc.text('45', pauseX+cW[3]+cW[4]/2,    y+headerH/2+3, {align:'center'});
+        doc.text('60', pauseX+cW[3]+cW[4]+cW[5]/2, y+headerH/2+3, {align:'center'});
+
+        const arbX = pauseX + pauseW;
+        filledCell(arbX, y, cW[6], headerH, 200,200,200);
+        doc.setFontSize(6);
+        doc.text('Arbeitsstunden', arbX + cW[6]/2, y+3.5, {align:'center'});
+        doc.text('ohne Pause',    arbX + cW[6]/2, y+7,   {align:'center'});
+
+        // Rahmen gesamt Header
+        doc.rect(x, y, tW, headerH);
+
+        y += headerH;
+
+        // ── Datenzeilen ──
+        const daysInMonth = new Date(parseInt(yr), mi+1, 0).getDate();
+
+        for (let day = startDay; day <= Math.min(endDay, daysInMonth); day++) {
+            const dateStr = `${yr}-${String(mi+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+            const entry   = state.logs.find(e => e.date === dateStr);
+            const isWork  = entry && (entry.type === 'Arbeitszeit' || entry.type === 'Halbtag');
+            const pauseMin = entry && isWork ? parseInt(entry.pause||0) : 0;
+
+            // Tag-Zelle
+            doc.rect(x, y, cW[0], rowH);
+            doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(0,0,0);
+            doc.text(String(day) + '.', x+cW[0]-1.5, y+rowH/2+1.2, {align:'right'});
+
+            // Beginn
+            doc.rect(x+cW[0], y, cW[1], rowH);
+            if (isWork && entry.start)
+                doc.text(entry.start, x+cW[0]+1, y+rowH/2+1.2);
+
+            // Ende
+            doc.rect(x+cW[0]+cW[1], y, cW[2], rowH);
+            if (isWork && entry.end)
+                doc.text(entry.end, x+cW[0]+cW[1]+1, y+rowH/2+1.2);
+
+            // Pause 30 / 45 / 60
+            doc.rect(pauseX,           y, cW[3], rowH);
+            doc.rect(pauseX+cW[3],     y, cW[4], rowH);
+            doc.rect(pauseX+cW[3]+cW[4], y, cW[5], rowH);
+            if (isWork) {
+                let checkCol = -1;
+                if (pauseMin === 30) checkCol = 0;
+                else if (pauseMin === 45) checkCol = 1;
+                else if (pauseMin >= 60) checkCol = 2;
+                if (checkCol >= 0) {
+                    const offsets = [0, cW[3], cW[3]+cW[4]];
+                    doc.setFontSize(8); doc.setFont('helvetica','bold');
+                    doc.text('X', pauseX + offsets[checkCol] + cW[3+checkCol]/2, y+rowH/2+1.3, {align:'center'});
+                    doc.setFont('helvetica','normal');
+                }
+                // Falls andere Pausenwerte → schreibe Minuten
+                if (checkCol === -1 && pauseMin > 0) {
+                    doc.setFontSize(6);
+                    doc.text(String(pauseMin), pauseX+1, y+rowH/2+1.2);
+                }
+            }
+
+            // Arbeitsstunden
+            doc.rect(arbX, y, cW[6], rowH);
+            if (isWork && parseFloat(entry.duration||0) > 0) {
+                doc.setFontSize(7);
+                doc.text(parseFloat(entry.duration).toFixed(2).replace('.',','),
+                    arbX + cW[6] - 1.5, y+rowH/2+1.2, {align:'right'});
+            }
+
+            y += rowH;
+        }
+
+        // Leere Zeilen für fehlende Tage am Monatsende (nur rechte Tabelle bis 31)
+        const maxDay = showGesamtstunden ? 31 : 16;
+        for (let day = Math.min(endDay, daysInMonth) + 1; day <= maxDay; day++) {
+            doc.rect(x, y, cW[0], rowH);
+            doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(0,0,0);
+            doc.text(String(day) + '.', x+cW[0]-1.5, y+rowH/2+1.2, {align:'right'});
+            doc.rect(x+cW[0], y, cW[1], rowH);
+            doc.rect(x+cW[0]+cW[1], y, cW[2], rowH);
+            doc.rect(pauseX,           y, cW[3], rowH);
+            doc.rect(pauseX+cW[3],     y, cW[4], rowH);
+            doc.rect(pauseX+cW[3]+cW[4], y, cW[5], rowH);
+            doc.rect(arbX, y, cW[6], rowH);
+            y += rowH;
+        }
+
+        // ── Gesamtstunden-Zeile (nur rechte Tabelle) ──
+        if (showGesamtstunden) {
+            const workDays = state.logs.filter(e=>e.type==='Arbeitszeit'||e.type==='Halbtag');
+            const totalH   = workDays.reduce((s,e)=>s+parseFloat(e.duration||0),0);
+            filledCell(x, y, tW - cW[6], rowH*1.2, 220,220,220);
+            doc.setFontSize(7.5); doc.setFont('helvetica','bold'); doc.setTextColor(0,0,0);
+            doc.text('Gesamtstunden:', x + 2, y + rowH*1.2/2 + 1.3);
+            doc.rect(arbX, y, cW[6], rowH*1.2);
+            doc.setFontSize(8);
+            doc.text(totalH.toFixed(2).replace('.',','),
+                arbX + cW[6] - 1.5, y + rowH*1.2/2 + 1.5, {align:'right'});
+        }
+    }
+
+    drawTable(mL, 1, 16, false);
+    drawTable(mL + tW + 4, 17, 31, true);
+
+    // ══════════════════════════════════════
+    // Minuten → Dezimalzahlen Tabelle
+    // ══════════════════════════════════════
+    const tableBottom = curY + headerH + 16 * rowH + 8;
+    let infoY = tableBottom;
+
+    doc.setFontSize(7.5); doc.setFont('helvetica','bold'); doc.setTextColor(0,0,0);
+    doc.text('Bitte schreiben Sie die Minuten in Dezimalzahlen!', mL, infoY);
+
+    infoY += 3;
+    const minRow = ['Minuten',        5,    10,   15,   20,   25,   30,   35,   40,   45,   50,   55,   60];
+    const dezRow = ['Dezimalzahlen','0,08','0,17','0,25','0,33','0,42','0,50','0,58','0,67','0,75','0,83','0,92','1,00'];
+    const mColW  = (pageW) / minRow.length;
+    const mRowH  = 4;
+
+    [minRow, dezRow].forEach((row, ri) => {
+        row.forEach((val, ci) => {
+            const cx = mL + ci * mColW;
+            const cy = infoY + ri * mRowH;
+            if (ri === 0) filledCell(cx, cy, mColW, mRowH, 220,220,220);
+            else doc.rect(cx, cy, mColW, mRowH);
+            doc.setFontSize(6.5); doc.setFont('helvetica', ri===0?'bold':'normal'); doc.setTextColor(0,0,0);
+            doc.text(String(val), cx + mColW/2, cy + mRowH/2 + 1.1, {align:'center'});
+        });
+    });
+
+    // ══════════════════════════════════════
+    // Pausenzeiten Hinweis
+    // ══════════════════════════════════════
+    infoY += 2 * mRowH + 5;
+    doc.setFontSize(7.5); doc.setFont('helvetica','bold'); doc.setTextColor(0,0,0);
+    doc.text('Pausenzeiten:', mL, infoY);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7);
+    doc.text('Bei einer Arbeitszeit von über 6 Stunden, mindestens 30 Minuten Pause', mL, infoY+4);
+    doc.text('Bei einer Arbeitszeit von über 6 Stunden, mindestens 45 Minuten Pause', mL, infoY+8);
+    doc.setFontSize(6.5);
+    doc.text('Eine Überschreitung der Höchstarbeitszeit von werktäglich 10 Stunden sowie Arbeit an Sonn-/Feiertagen und kundenseitig unter', mL, infoY+14);
+    doc.text('„Bemerkungen" im Sinne des Arbeitszeitgesetzes (ArbZG) begründet.', mL, infoY+18);
+
+    // ══════════════════════════════════════
+    // Bemerkungen
+    // ══════════════════════════════════════
+    infoY += 25;
+    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(0,0,0);
+    doc.text('Bemerkungen:', mL, infoY);
+    doc.line(mL, infoY+3, mR, infoY+3);
+    doc.line(mL, infoY+9, mR, infoY+9);
+
+    // ══════════════════════════════════════
+    // Unterschriften-Boxen
+    // ══════════════════════════════════════
+    infoY += 15;
+    const boxH = 28;
+    const boxW = pageW / 2 - 2;
+
+    // Linke Box
+    doc.rect(mL, infoY, boxW, boxH);
+    doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(0,0,0);
+    doc.text('Hiermit bestätigen wir die Richtigkeit der Angaben und erkennen', mL+2, infoY+5);
+    doc.text('diese an. Die Allgemeinen Beschäftigungsbedingungen von puro', mL+2, infoY+9);
+    doc.text('Personal wurden uns ausgehändigt und werden von uns', mL+2, infoY+13);
+    doc.text('akzeptiert.', mL+2, infoY+17);
+    doc.line(mL+2, infoY+boxH-4, mL+boxW-2, infoY+boxH-4);
+    doc.setFontSize(6.5);
+    doc.text('Datum / Unterschrift Auftraggeber', mL+2, infoY+boxH-1.5);
+
+    // Rechte Box
+    const rBoxX = mL + boxW + 4;
+    doc.rect(rBoxX, infoY, boxW, boxH);
+    doc.setFontSize(7);
+    doc.text('Für Ordnungsmäßigkeit und Richtigkeit der Gesamtstunden', rBoxX+2, infoY+5);
+    doc.line(rBoxX+2, infoY+boxH-4, rBoxX+boxW-2, infoY+boxH-4);
+    doc.setFontSize(6.5);
+    doc.text('Datum / Unterschrift Mitarbeiter', rBoxX+2, infoY+boxH-1.5);
+
+    // ══════════════════════════════════════
+    // Footer
+    // ══════════════════════════════════════
+    doc.setFontSize(7); doc.setTextColor(100,100,100);
+    doc.text('puro Personaldienstleistung GmbH | Tätigkeitsnachweis', 105, H-5, {align:'center'});
+
+    doc.save(`Taetigkeitsnachweis_${name.replace(/ /g,'_')}_${monthName}_${yr}.pdf`);
     closeModal('modal-export');
-    toast('✅ PDF gespeichert!', 'success');
+    toast('✅ PDF (Tätigkeitsnachweis) gespeichert!', 'success');
 }
 
 function doExportXLS() {
@@ -2115,8 +1831,11 @@ function switchTab(name, btn) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
     btn.classList.add('active');
-    if (name === 'chart') drawCharts();
+    if (name === 'chart')    drawCharts();
     if (name === 'advanced') updateAdvanced();
+    if (name === 'week')     renderWeekView();
+    if (name === 'goals')    renderGoals();
+    if (name === 'archive')  renderArchive();
 }
 
 function sortLogs() {
@@ -2165,6 +1884,13 @@ function confirmAdd() {
     const errEl = document.getElementById('m_error');
 
     if (!date) { errEl.textContent='Datum erforderlich'; errEl.style.display='block'; return; }
+    // ── منع تكرار نفس اليوم ──
+    const existing = state.logs.find(e => e.date === date);
+    if (existing) {
+        errEl.textContent = `⚠️ Dieser Tag (${date}) ist bereits eingetragen! Bitte zuerst löschen.`;
+        errEl.style.display = 'block';
+        return;
+    }
     const isWork = type==='Arbeitszeit' || type==='Halbtag';
     if (isWork && (!start || !end)) { errEl.textContent='Von/Bis erforderlich'; errEl.style.display='block'; return; }
 
@@ -2300,30 +2026,6 @@ function initSelects() {
 // ════════════════════════════════════════════
 // القسم 15: التهيئة
 // ════════════════════════════════════════════
-
-window.addEventListener('load', () => {
-    // تحميل الثيم
-    if (localStorage.getItem('theme') === 'light') {
-        document.body.classList.add('light');
-        document.getElementById('themeBtn').textContent = '🌙';
-    } else {
-        document.getElementById('themeBtn').textContent = '☀️';
-    }
-
-    // تنظيف أي جلسة فاسدة من إصدارات قديمة
-    try {
-        const s = JSON.parse(localStorage.getItem('active_session') || 'null');
-        if (s && isNaN(new Date(s.start).getTime())) {
-            localStorage.removeItem('active_session');
-        }
-    } catch(e) { localStorage.removeItem('active_session'); }
-
-    initSelects();
-    loadLogs();
-    startClock();
-    watchOnline();
-    registerSW();
-});
 
 // ════════════════════════════════════════════
 // التقويم الشهري
@@ -2541,6 +2243,925 @@ function registerSW() {
     navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
 }
 
+// ════════════════════════════════════════════
+// ميزة 1: PIN-Schutz
+// ════════════════════════════════════════════
+const PIN = {
+    digits: [], maxLen: 4,
+    get stored() { return localStorage.getItem('app_pin') || ''; },
+    isSet() { return !!this.stored; },
+};
+
+function initPIN() {
+    if (!PIN.isSet()) { hidePinScreen(); return; }
+    document.getElementById('pin-screen').style.display = 'flex';
+    document.getElementById('app-wrapper').style.display = 'none';
+    document.getElementById('pin-screen').dataset.mode = 'unlock';
+    updatePinDisplay();
+}
+
+function hidePinScreen() {
+    document.getElementById('pin-screen').style.display = 'none';
+    document.getElementById('app-wrapper').style.display = 'block';
+}
+
+function pinPress(v) {
+    if (v === 'del') { PIN.digits.pop(); }
+    else if (v === 'C') { PIN.digits = []; }
+    else if (PIN.digits.length < PIN.maxLen) { PIN.digits.push(v); }
+    updatePinDisplay();
+    if (PIN.digits.length === PIN.maxLen) {
+        const entered = PIN.digits.join('');
+        const mode = document.getElementById('pin-screen').dataset.mode || 'unlock';
+        setTimeout(() => {
+            if (mode === 'unlock') {
+                if (entered === PIN.stored) { hidePinScreen(); }
+                else { PIN.digits = []; shakePin(); updatePinDisplay(); toast('❌ Falscher PIN', 'error'); }
+            } else {
+                const cc = document.getElementById('pin-confirm-code');
+                if (!cc.dataset.first) {
+                    cc.dataset.first = entered;
+                    PIN.digits = [];
+                    document.getElementById('pin-prompt').textContent = 'PIN bestätigen:';
+                    updatePinDisplay();
+                } else {
+                    if (entered === cc.dataset.first) {
+                        localStorage.setItem('app_pin', entered);
+                        PIN.digits = [];
+                        delete cc.dataset.first;
+                        closeModal('modal-pin');
+                        document.getElementById('pin-prompt').textContent = 'PIN eingeben:';
+                        toast('✅ PIN gesetzt!', 'success');
+                    } else {
+                        PIN.digits = [];
+                        delete cc.dataset.first;
+                        document.getElementById('pin-prompt').textContent = 'Nicht übereinstimmend. Nochmal:';
+                        shakePin(); updatePinDisplay();
+                    }
+                }
+            }
+        }, 150);
+    }
+}
+
+function updatePinDisplay() {
+    const d = document.getElementById('pin-dots');
+    if (!d) return;
+    d.innerHTML = Array.from({length: PIN.maxLen}, (_,i) =>
+        `<div class="pin-dot ${i < PIN.digits.length ? 'filled' : ''}"></div>`).join('');
+}
+
+function shakePin() {
+    const d = document.getElementById('pin-dots');
+    if (!d) return;
+    d.classList.add('shake');
+    setTimeout(() => d.classList.remove('shake'), 500);
+}
+
+function openPinSetup() {
+    PIN.digits = [];
+    document.getElementById('pin-screen').dataset.mode = 'setup';
+    const cc = document.getElementById('pin-confirm-code');
+    if (cc) delete cc.dataset.first;
+    document.getElementById('pin-prompt').textContent = 'Neuen 4-stelligen PIN eingeben:';
+    updatePinDisplay();
+    openModal('modal-pin');
+}
+
+function removePIN() {
+    localStorage.removeItem('app_pin');
+    closeModal('modal-pin');
+    toast('✅ PIN entfernt', 'success');
+}
+
+// ════════════════════════════════════════════
+// ميزة 2: Mehrsprachigkeit
+// ════════════════════════════════════════════
+const TRANSLATIONS = {
+    de: {
+        checkIn:'Check-In', checkOut:'Check-Out', pause:'Pause',
+        addManual:'＋ Manuell', exportPDF:'📄 PDF', exportXLS:'📊 Excel',
+        del:'🗑 Löschen', month:'Monat', year:'Jahr',
+        sollH:'Soll-Stunden / Monat', analysis:'🔬 Analyse', week:'📅 Woche',
+        goals:'🎯 Ziele', protocol:'📋 Protokoll', chart:'📈 Diagramm',
+        stundenlohn:'Stundenlohn (€)', goal:'Monatsziel (h)',
+        copyLastWeek:'🔁 Woche kopieren', earnings:'Verdienst',
+    },
+    ar: {
+        checkIn:'تسجيل دخول', checkOut:'تسجيل خروج', pause:'استراحة',
+        addManual:'＋ إضافة', exportPDF:'📄 PDF', exportXLS:'📊 Excel',
+        del:'🗑 حذف', month:'الشهر', year:'السنة',
+        sollH:'ساعات مطلوبة / شهر', analysis:'🔬 تحليل', week:'📅 أسبوع',
+        goals:'🎯 الأهداف', protocol:'📋 السجل', chart:'📈 بياني',
+        stundenlohn:'الأجر / ساعة (€)', goal:'هدف الشهر (h)',
+        copyLastWeek:'🔁 نسخ الأسبوع', earnings:'الدخل',
+    },
+    en: {
+        checkIn:'Check-In', checkOut:'Check-Out', pause:'Break',
+        addManual:'＋ Add', exportPDF:'📄 PDF', exportXLS:'📊 Excel',
+        del:'🗑 Delete', month:'Month', year:'Year',
+        sollH:'Target hours / month', analysis:'🔬 Analysis', week:'📅 Week',
+        goals:'🎯 Goals', protocol:'📋 Log', chart:'📈 Chart',
+        stundenlohn:'Hourly rate (€)', goal:'Monthly goal (h)',
+        copyLastWeek:'🔁 Copy last week', earnings:'Earnings',
+    }
+};
+let currentLang = localStorage.getItem('lang') || 'de';
+
+function t(k) { return (TRANSLATIONS[currentLang]||TRANSLATIONS.de)[k] || k; }
+
+function setLang(l) {
+    currentLang = l;
+    localStorage.setItem('lang', l);
+    document.getElementById('lang-btn').textContent = l.toUpperCase();
+    applyLang();
+    document.getElementById('lang-menu').classList.remove('open');
+}
+
+function toggleLangMenu() {
+    document.getElementById('lang-menu').classList.toggle('open');
+}
+
+function applyLang() {
+    const map = {
+        'btn-add-manual': 'addManual', 'btn-export-pdf': 'exportPDF',
+        'btn-export-xls': 'exportXLS', 'btn-clear': 'del',
+        'btn-copy-week': 'copyLastWeek', 'lbl-month': 'month',
+        'lbl-year': 'year', 'lbl-sollh': 'sollH',
+        'lbl-stundenlohn': 'stundenlohn', 'lbl-goal': 'goal',
+    };
+    Object.entries(map).forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = t(key);
+    });
+    document.querySelectorAll('[data-lang]').forEach(el => {
+        const v = t(el.dataset.lang);
+        if (v) el.textContent = v;
+    });
+    document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+}
+
+// ════════════════════════════════════════════
+// ميزة 3: Wochenansicht
+// ════════════════════════════════════════════
+function renderWeekView() {
+    const today = new Date();
+    const dow = today.getDay();
+    const mondayOffset = dow === 0 ? -6 : 1 - dow;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + mondayOffset);
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(monday); d.setDate(monday.getDate() + i); days.push(d);
+    }
+    const dayNames = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+    let weekH = 0, weekEntries = 0;
+    let html = `<div class="card"><div class="card-title">📅 Aktuelle Woche</div><div class="week-grid">`;
+    days.forEach((d, i) => {
+        const dateStr = d.toISOString().split('T')[0];
+        const [dy, dm] = dateStr.split('-');
+        const dd = String(d.getDate()).padStart(2,'0');
+        const isToday = dateStr === today.toISOString().split('T')[0];
+        const isWeekend = i >= 5;
+        const logsMonth = getLogsForMonth(parseInt(dy), parseInt(dm)-1);
+        const entry = logsMonth.find(e => e.date === dateStr);
+        const h = entry ? parseFloat(entry.duration||0) : 0;
+        weekH += h; if (h > 0) weekEntries++;
+        const pct = Math.min(100, Math.round((h/8)*100));
+        const col = h >= 8 ? 'var(--green)' : h > 0 ? 'var(--yellow)' : 'var(--text-dim)';
+        html += `<div class="week-day ${isToday?'today':''} ${isWeekend?'weekend':''}" onclick="openTodoModal('${dateStr}')">
+            <div class="week-day-name">${dayNames[i]}</div>
+            <div class="week-day-num">${dd}.${dm}</div>
+            ${entry ? `
+            <div class="week-entry-type">${CONFIG.ENTRY_TYPES[entry.type]?.icon||''}</div>
+            <div class="week-times mono">${entry.start||''} ${entry.end?'–':''} ${entry.end||''}</div>
+            <div class="week-hours" style="color:${col}">${h>0?h.toFixed(2).replace('.',',')+'h':'—'}</div>
+            <div class="week-bar"><div class="week-bar-fill" style="width:${pct}%"></div></div>
+            ` : `<div class="week-empty">${isWeekend?'🏖':'—'}</div>`}
+        </div>`;
+    });
+    html += `</div>
+    <div class="week-summary">
+        <span>Gesamt: <strong class="mono">${weekH.toFixed(2).replace('.',',')} h</strong></span>
+        <span>Tage: <strong>${weekEntries}</strong></span>
+        <span style="color:${weekH>=40?'var(--green)':'var(--yellow)'}">
+            ${weekH>=40 ? '✅ 40h Ziel erreicht' : `Noch ${(40-weekH).toFixed(1)} h bis 40h`}
+        </span>
+    </div></div>`;
+    document.getElementById('tab-week').innerHTML = html;
+}
+
+// ════════════════════════════════════════════
+// ميزة 4: Gehaltsberechnung
+// ════════════════════════════════════════════
+function calcEarnings() {
+    const rate = parseFloat(document.getElementById('stundenlohn')?.value) || 0;
+    const card = document.getElementById('earnings-card');
+    const el   = document.getElementById('s_earnings');
+    if (!card || !el) return;
+    if (rate <= 0) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    const workDays = state.logs.filter(e => e.type==='Arbeitszeit'||e.type==='Halbtag');
+    const ist = workDays.reduce((s,e) => s + parseFloat(e.duration||0), 0);
+    el.textContent = (ist * rate).toFixed(2).replace('.',',') + ' €';
+}
+
+// ════════════════════════════════════════════
+// ميزة 5: Pomodoro-Timer
+// ════════════════════════════════════════════
+const pomo = {
+    workMin:25, breakMin:5, longBreakMin:15,
+    session:0, maxSessions:4,
+    running:false, paused:false, onBreak:false,
+    remaining:0, interval:null,
+};
+
+function pomoStart() {
+    if (pomo.running && !pomo.paused) { pomoTogglePause(); return; }
+    if (!pomo.running) {
+        pomo.onBreak = false; pomo.remaining = pomo.workMin * 60;
+        pomo.running = true; pomo.paused = false;
+    } else { pomo.paused = false; }
+    clearInterval(pomo.interval);
+    pomo.interval = setInterval(pomoTick, 1000);
+    updatePomoUI();
+    toast('🍅 Pomodoro gestartet!', 'success');
+}
+
+function pomoTogglePause() {
+    pomo.paused = !pomo.paused;
+    if (pomo.paused) clearInterval(pomo.interval);
+    else { pomo.interval = setInterval(pomoTick, 1000); }
+    updatePomoUI();
+}
+
+function pomoStop() {
+    clearInterval(pomo.interval);
+    pomo.running = false; pomo.paused = false; pomo.onBreak = false;
+    pomo.remaining = pomo.workMin * 60; pomo.session = 0;
+    updatePomoUI(); toast('⏹ Gestoppt', 'info');
+}
+
+function pomoTick() {
+    pomo.remaining--;
+    if (pomo.remaining <= 0) {
+        clearInterval(pomo.interval);
+        if (!pomo.onBreak) {
+            pomo.session++;
+            const isLong = pomo.session % pomo.maxSessions === 0;
+            pomo.onBreak = true;
+            pomo.remaining = (isLong ? pomo.longBreakMin : pomo.breakMin) * 60;
+            toast(`☕ ${isLong?'Lange Pause ('+pomo.longBreakMin+' min)':'Kurze Pause ('+pomo.breakMin+' min)'}`, 'warning');
+            try { new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAA==').play(); } catch(e) {}
+        } else {
+            pomo.onBreak = false; pomo.remaining = pomo.workMin * 60;
+            toast('🍅 Zurück zur Arbeit!', 'success');
+        }
+        pomo.interval = setInterval(pomoTick, 1000);
+    }
+    updatePomoUI();
+}
+
+function updatePomoUI() {
+    const m = Math.floor(pomo.remaining/60).toString().padStart(2,'0');
+    const s = (pomo.remaining%60).toString().padStart(2,'0');
+    const te = document.getElementById('pomo-timer');
+    if (te) te.textContent = `${m}:${s}`;
+    const st = document.getElementById('pomo-status');
+    if (st) st.textContent = !pomo.running ? 'Bereit' : pomo.onBreak ? '☕ Pause läuft' : `🍅 Session ${pomo.session+1}/${pomo.maxSessions}`;
+    const btn = document.getElementById('pomo-btn');
+    if (btn) btn.textContent = !pomo.running ? '▶ Start' : pomo.paused ? '▶ Weiter' : '⏸ Pause';
+    const dots = document.getElementById('pomo-dots');
+    if (dots) {
+        const sess = pomo.session % pomo.maxSessions;
+        dots.innerHTML = Array.from({length:pomo.maxSessions}, (_,i) =>
+            `<span class="pomo-dot ${i<sess?'done':i===sess&&!pomo.onBreak&&pomo.running?'active':''}"></span>`
+        ).join('');
+    }
+}
+
+// ════════════════════════════════════════════
+// ميزة 6: Stundenrechner
+// ════════════════════════════════════════════
+function calcHours() {
+    const s = document.getElementById('calc-start').value;
+    const e = document.getElementById('calc-end').value;
+    const p = parseInt(document.getElementById('calc-pause').value)||0;
+    const rEl = document.getElementById('calc-result');
+    const eEl = document.getElementById('calc-earn');
+    if (!s||!e) { rEl.textContent='—'; eEl.textContent=''; return; }
+    const h = parseFloat(calcDur(s,e,p));
+    rEl.textContent = h.toFixed(2).replace('.',',') + ' h';
+    const rate = parseFloat(document.getElementById('stundenlohn')?.value)||0;
+    eEl.textContent = rate > 0 ? '≈ ' + (h*rate).toFixed(2).replace('.',',') + ' €' : '';
+}
+
+// ════════════════════════════════════════════
+// ميزة 7: To-Do Liste
+// ════════════════════════════════════════════
+function getTodos(date) {
+    try { return JSON.parse(localStorage.getItem(`todos_${date}`)|| '[]'); } catch { return []; }
+}
+function saveTodos(date, todos) { localStorage.setItem(`todos_${date}`, JSON.stringify(todos)); }
+
+function openTodoModal(date) {
+    if (!date) date = new Date().toISOString().split('T')[0];
+    document.getElementById('todo-date').value = date;
+    document.getElementById('todo-date-label').textContent = date;
+    const dp = document.getElementById('todo-date-pick');
+    if (dp) dp.value = date;
+    renderTodoList(date);
+    openModal('modal-todo');
+}
+
+function renderTodoList(date) {
+    const todos = getTodos(date);
+    const el = document.getElementById('todo-list');
+    if (!el) return;
+    if (!todos.length) {
+        el.innerHTML = '<div style="color:var(--text-dim);font-size:0.82rem;text-align:center;padding:16px">Keine Aufgaben für diesen Tag</div>';
+        return;
+    }
+    el.innerHTML = todos.map((td,i) => `
+        <div class="todo-item ${td.done?'done':''}">
+            <input type="checkbox" ${td.done?'checked':''} onchange="toggleTodo('${date}',${i})">
+            <span class="todo-text">${td.text}</span>
+            <button class="cal-planned-del" onclick="deleteTodo('${date}',${i})">✕</button>
+        </div>`).join('');
+}
+
+function addTodo() {
+    const date = document.getElementById('todo-date').value;
+    const inp  = document.getElementById('todo-input');
+    const text = inp.value.trim();
+    if (!text) return;
+    const todos = getTodos(date);
+    todos.push({text, done:false});
+    saveTodos(date, todos);
+    inp.value = '';
+    renderTodoList(date);
+}
+
+function toggleTodo(date, idx) {
+    const todos = getTodos(date);
+    if (todos[idx]) todos[idx].done = !todos[idx].done;
+    saveTodos(date, todos);
+    renderTodoList(date);
+}
+
+function deleteTodo(date, idx) {
+    const todos = getTodos(date);
+    todos.splice(idx,1);
+    saveTodos(date, todos);
+    renderTodoList(date);
+}
+
+// ════════════════════════════════════════════
+// ميزة 8: Letzte Woche kopieren
+// ════════════════════════════════════════════
+function copyLastWeek() {
+    const mi = parseInt(document.getElementById('monSelect').value);
+    const yr = parseInt(document.getElementById('yearSelect').value);
+    const today = new Date(yr, mi, new Date().getDate());
+    const dow = today.getDay();
+    const mondayOffset = dow === 0 ? -6 : 1 - dow;
+    const thisMonday = new Date(today);
+    thisMonday.setDate(today.getDate() + mondayOffset);
+    const lastMonday = new Date(thisMonday);
+    lastMonday.setDate(thisMonday.getDate() - 7);
+
+    let copied = 0;
+    for (let i = 0; i < 5; i++) {
+        const src = new Date(lastMonday); src.setDate(lastMonday.getDate()+i);
+        const dst = new Date(thisMonday); dst.setDate(thisMonday.getDate()+i);
+        const srcStr = src.toISOString().split('T')[0];
+        const dstStr = dst.toISOString().split('T')[0];
+        const [sy,sm] = srcStr.split('-').map(Number);
+        const srcLogs = getLogsForMonth(sy, sm-1);
+        const srcEntry = srcLogs.find(e => e.date === srcStr);
+        if (!srcEntry || srcEntry.type !== 'Arbeitszeit') continue;
+        if (state.logs.some(e => e.date === dstStr)) continue;
+        state.logs.push({...srcEntry, id: Date.now()+i, date: dstStr});
+        copied++;
+    }
+    if (copied > 0) {
+        state.logs.sort((a,b) => new Date(a.date)-new Date(b.date));
+        saveLogs(); loadLogs();
+        toast(`✅ ${copied} Arbeitstage kopiert!`, 'success');
+    } else {
+        toast('ℹ️ Nichts zu kopieren (Vorwoche leer oder Tage schon vorhanden)', 'info');
+    }
+}
+
+// ════════════════════════════════════════════
+// ميزة 9: Ziele / Goals Dashboard
+// ════════════════════════════════════════════
+function renderGoals() {
+    const el = document.getElementById('tab-goals');
+    if (!el) return;
+    const soll = parseFloat(document.getElementById('sollH')?.value)||160;
+    const goal = parseFloat(document.getElementById('monthlyGoal')?.value)||soll;
+    const rate = parseFloat(document.getElementById('stundenlohn')?.value)||0;
+    const workDays = state.logs.filter(e => e.type==='Arbeitszeit'||e.type==='Halbtag');
+    const ist = workDays.reduce((s,e) => s+parseFloat(e.duration||0),0);
+    const pct = goal > 0 ? Math.min(100, Math.round((ist/goal)*100)) : 0;
+    const remaining = Math.max(0, goal-ist).toFixed(1);
+    const overtime = (ist-soll).toFixed(2).replace('.',',');
+    const earnings = (ist*rate).toFixed(2).replace('.',',');
+    const daysLeft = (() => {
+        const now = new Date();
+        const last = new Date(now.getFullYear(), now.getMonth()+1, 0);
+        let wd = 0;
+        for (let d = new Date(now); d <= last; d.setDate(d.getDate()+1)) {
+            const dw = d.getDay(); if (dw !== 0 && dw !== 6) wd++;
+        }
+        return wd;
+    })();
+    const neededPerDay = daysLeft > 0 ? (Math.max(0,goal-ist)/daysLeft).toFixed(2).replace('.',',') : '0';
+
+    el.innerHTML = `<div class="card"><div class="card-title">🎯 Ziele & Verdienst</div>
+    <div class="goals-grid">
+        <div class="goal-card">
+            <div class="goal-label">Monatsfortschritt</div>
+            <div class="goal-val">${ist.toFixed(1)} / ${goal} h</div>
+            <div class="goal-bar"><div class="goal-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':'var(--red)'}"></div></div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">${pct}% – ${remaining} h verbleibend</div>
+        </div>
+        <div class="goal-card">
+            <div class="goal-label">Arbeitstage noch</div>
+            <div class="goal-val">${daysLeft}</div>
+            <div class="goal-sub">Benötigt: ~${neededPerDay} h/Tag</div>
+        </div>
+        <div class="goal-card">
+            <div class="goal-label">Überstunden</div>
+            <div class="goal-val" style="color:var(--${parseFloat(overtime)>0?'green':'yellow'})">${parseFloat(overtime)>0?'+':''}${overtime} h</div>
+            <div class="goal-sub">gegenüber ${soll} h Soll</div>
+        </div>
+        ${rate > 0 ? `
+        <div class="goal-card">
+            <div class="goal-label">Verdienst bisher</div>
+            <div class="goal-val" style="color:var(--green)">${earnings} €</div>
+            <div class="goal-sub">bei ${rate.toFixed(2).replace('.',',')} €/h</div>
+        </div>
+        <div class="goal-card">
+            <div class="goal-label">Erwarteter Monatsverdienst</div>
+            <div class="goal-val" style="color:var(--yellow)">${(goal*rate).toFixed(2).replace('.',',')} €</div>
+            <div class="goal-sub">bei ${goal} h Ziel</div>
+        </div>` : ''}
+        <div class="goal-card" style="grid-column:1/-1">
+            <div class="goal-label">Tagesübersicht – aktuelle Woche</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            ${(() => {
+                const today2 = new Date();
+                const dow2 = today2.getDay();
+                const mo = new Date(today2);
+                mo.setDate(today2.getDate() + (dow2===0?-6:1-dow2));
+                const dNames = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+                return dNames.map((dn,i) => {
+                    const d = new Date(mo); d.setDate(mo.getDate()+i);
+                    const ds = d.toISOString().split('T')[0];
+                    const en = state.logs.find(e => e.date===ds);
+                    const h = en ? parseFloat(en.duration||0) : 0;
+                    const col = h>=8?'var(--green)':h>0?'var(--yellow)':'var(--text-dim)';
+                    return `<div style="flex:1;min-width:44px;text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 4px">
+                        <div style="font-size:0.68rem;color:var(--text-dim)">${dn}</div>
+                        <div style="font-family:'DM Mono',monospace;font-size:0.9rem;font-weight:700;color:${col};margin-top:2px">${h>0?h.toFixed(1):'—'}</div>
+                    </div>`;
+                }).join('');
+            })()}
+            </div>
+        </div>
+    </div></div>`;
+}
+
+// ════════════════════════════════════════════
+// ميزة 10: PDF per E-Mail
+// ════════════════════════════════════════════
+function sharePDFEmail() {
+    const name = document.getElementById('p_name').value || CONFIG.defaults.name;
+    const comp = document.getElementById('p_company').value || CONFIG.defaults.company;
+    const mi   = parseInt(document.getElementById('monSelect').value);
+    const yr   = document.getElementById('yearSelect').value;
+    const mn   = CONFIG.months[mi];
+    const subj = encodeURIComponent(`Tätigkeitsnachweis ${mn} ${yr} – ${name}`);
+    const body = encodeURIComponent(`Sehr geehrte Damen und Herren,\n\nanbei sende ich meinen Tätigkeitsnachweis für ${mn} ${yr}.\n\nMitarbeiter: ${name}\nEinsatzbetrieb: ${comp}\n\nMit freundlichen Grüßen\n${name}`);
+    exportPDF();
+    setTimeout(() => window.open(`mailto:?subject=${subj}&body=${body}`), 1200);
+    toast('📧 E-Mail-Client wird geöffnet...', 'info');
+}
+
+// ════════════════════════════════════════════
+// ميزة 11: Drucken
+// ════════════════════════════════════════════
+function printMonth() {
+    exportPDF();
+    toast('🖨 PDF gespeichert – bitte öffnen und drucken', 'info');
+}
+
+// ─── OVERRIDE renderLogTable for Tags ───
+function renderLogTable() {
+    const search = document.getElementById('searchInput')?.value.toLowerCase() || '';
+    const ftype  = document.getElementById('filterType')?.value || '';
+    const tbody  = document.getElementById('logBody');
+    let filtered = state.logs.filter(e => {
+        const matchSearch = !search || e.date?.includes(search) || e.start?.includes(search) || (e.note||'').toLowerCase().includes(search) || (e.type||'').toLowerCase().includes(search);
+        const matchType = !ftype || e.type === ftype;
+        return matchSearch && matchType;
+    });
+    if (!filtered.length) {
+        tbody.innerHTML = '<tr class="tr-empty"><td colspan="9"><div class="empty-state"><div class="es-icon">📭</div><p>Keine Einträge für diesen Monat</p></div></td></tr>';
+        document.getElementById('tableFooter').textContent = '0 Einträge';
+        return;
+    }
+    tbody.innerHTML = filtered.map(e => {
+        const cfg = CONFIG.ENTRY_TYPES[e.type] || CONFIG.ENTRY_TYPES['Nicht Arbeitstag'];
+        const isWork = e.type === 'Arbeitszeit' || e.type === 'Halbtag';
+        const h = parseFloat(e.duration||0);
+        const hClass = h >= 8 ? 'hours-good' : h > 0 ? 'hours-low' : 'hours-zero';
+        const [y,m,d] = (e.date||'').split('-');
+        const dateLabel = d && m ? d+'.'+m : (e.date||'—');
+        const dayName = e.date ? new Date(e.date+'T12:00').toLocaleDateString('de-DE',{weekday:'short'}) : '';
+        const mgrNote = e.mgr_note ? '<span class="mgr-note-badge" title="'+e.mgr_note+'">📋 Mgr</span>' : '';
+        return '<tr><td><div style="font-weight:700;font-size:.87rem" class="mono">'+dateLabel+'</div><div style="font-size:.68rem;color:var(--text-muted)">'+dayName+'</div></td>' +
+            '<td><span class="type-badge '+cfg.badge+'">'+cfg.icon+' '+cfg.label+'</span></td>' +
+            '<td>'+(isWork ? '<input type="time" value="'+(e.start||'')+'" onchange="updateField('+e.id+',\'start\',this.value)">' : '<span style="color:var(--text-dim)">—</span>')+'</td>' +
+            '<td>'+(isWork ? '<input type="time" value="'+(e.end||'')+'" onchange="updateField('+e.id+',\'end\',this.value)">' : '<span style="color:var(--text-dim)">—</span>')+'</td>' +
+            '<td>'+(isWork ? '<input type="number" value="'+(e.pause||0)+'" min="0" max="480" style="width:58px" onchange="updateField('+e.id+',\'pause\',this.value)">' : '<span style="color:var(--text-dim)">—</span>')+'</td>' +
+            '<td><span class="mono fw-7 '+hClass+'">'+(h > 0 ? h.toFixed(2).replace('.',',')+' h' : '—')+'</span></td>' +
+            '<td><div style="max-width:120px">'+renderTagChips(e.tags)+'</div></td>' +
+            '<td><span class="note-text" title="'+(e.note||'')+'">'+(e.note || '<span style="color:var(--text-dim)">—</span>')+'</span>'+mgrNote+'</td>' +
+            '<td><div class="row-actions">' +
+                '<button class="action-btn tag" onclick="openTagModal('+e.id+')" title="Tags">🏷</button>' +
+                '<button class="action-btn note" onclick="openNoteModal('+e.id+')" title="Notiz">📝</button>' +
+                '<button class="action-btn del" onclick="deleteEntry('+e.id+')" title="Löschen">🗑️</button>' +
+            '</div></td></tr>';
+    }).join('');
+    document.getElementById('tableFooter').textContent = filtered.length+' Eintrag'+(filtered.length!==1?'e':'');
+}
+
+
+// ─── OVERRIDE confirmAdd for Tags ───
+function confirmAdd() {
+    const date  = document.getElementById('m_date').value;
+    const type  = document.getElementById('m_type').value;
+    const start = document.getElementById('m_start').value;
+    const end   = document.getElementById('m_end').value;
+    const pause = document.getElementById('m_pause').value;
+    const note  = document.getElementById('m_note').value;
+    const errEl = document.getElementById('m_error');
+    if (!date) { errEl.textContent='Datum erforderlich'; errEl.style.display='block'; return; }
+    const existing = state.logs.find(e => e.date === date);
+    if (existing) { errEl.textContent='⚠️ Dieser Tag ('+date+') ist bereits eingetragen!'; errEl.style.display='block'; return; }
+    const isWork = type==='Arbeitszeit'||type==='Halbtag';
+    if (isWork && (!start||!end)) { errEl.textContent='Von/Bis erforderlich'; errEl.style.display='block'; return; }
+    const tags = [...document.querySelectorAll('#add-tag-selector .tag-option.selected')].map(el=>el.dataset.tag);
+    const entry = { id:Date.now(), date, type, start:isWork?start:'', end:isWork?end:'', pause:isWork?pause:'0', duration:isWork?calcDur(start,end,pause):'0.00', note, tags, mgr_note:'' };
+    saveEntry(entry);
+    closeModal('modal-add');
+    toast('✅ Eintrag hinzugefügt','success');
+}
+
+// ─── OVERRIDE switchTab for new tabs ───
+function switchTab(name, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('tab-'+name).classList.add('active');
+    btn.classList.add('active');
+    if (name==='chart')    drawCharts();
+    if (name==='advanced') updateAdvanced();
+    if (name==='week')     renderWeekView();
+    if (name==='goals')    renderGoals();
+    if (name==='archive')  renderArchive();
+}
+
+// ─── OVERRIDE yearSelect onchange ───
+function onYearChange() {
+    loadLogs();
+    const panel=document.getElementById('tab-archive');
+    if(panel && panel.classList.contains('active')) renderArchive();
+}
+
+// ════════════════════════════════════════════
+// NEUE FEATURES v3
+// ════════════════════════════════════════════
+
+// ── Tags ──
+const TAG_DEFS = [
+    {id:'meeting',  label:'Meeting',     cls:'meeting'},
+    {id:'office',   label:'Büro',        cls:'office'},
+    {id:'field',    label:'Außendienst', cls:'field'},
+    {id:'home',     label:'HomeOffice',  cls:'home'},
+    {id:'training', label:'Schulung',    cls:'training'},
+];
+let editingTagEntryId = null;
+
+function openTagModal(id) {
+    editingTagEntryId = id;
+    const entry = state.logs.find(e => e.id === id);
+    const current = entry ? (entry.tags || []) : [];
+    const sel = document.getElementById('tag-selector');
+    sel.innerHTML = TAG_DEFS.map(td =>
+        '<div class="tag-option ' + td.cls + (current.includes(td.id)?' selected':'') + '" onclick="toggleTagOption(\''+td.id+'\',this)" data-tag="'+td.id+'">' + td.label + '</div>'
+    ).join('');
+    const note = document.getElementById('mgr-note-input');
+    if (note) note.value = entry ? (entry.mgr_note || '') : '';
+    openModal('modal-tags');
+}
+function toggleTagOption(tagId, el) { el.classList.toggle('selected'); }
+function saveEntryTags() {
+    const entry = state.logs.find(e => e.id === editingTagEntryId);
+    if (!entry) return;
+    entry.tags = [...document.querySelectorAll('#tag-selector .tag-option.selected')].map(el => el.dataset.tag);
+    const note = document.getElementById('mgr-note-input');
+    if (note) entry.mgr_note = note.value.trim();
+    saveLogs(); renderLogTable();
+    closeModal('modal-tags');
+    toast('✅ Tags & Notiz gespeichert', 'success');
+}
+function renderTagChips(tags) {
+    if (!tags || !tags.length) return '';
+    return tags.map(t => {
+        const def = TAG_DEFS.find(d => d.id === t);
+        return def ? '<span class="tag-chip ' + def.cls + '">' + def.label + '</span>' : '';
+    }).join('');
+}
+
+// ── Jahres-Heatmap ──
+function renderHeatmap(targetYear) {
+    const yr = targetYear || parseInt(document.getElementById('yearSelect')?.value) || new Date().getFullYear();
+    const wrap = document.getElementById('heatmap-wrap');
+    if (!wrap) return;
+    const today = new Date();
+    const endDate = new Date(yr, 11, 31);
+    const dataMap = {};
+    for (let m = 0; m < 12; m++) {
+        getLogsForMonth(yr, m).forEach(e => {
+            if (e.type==='Arbeitszeit'||e.type==='Halbtag') dataMap[e.date] = parseFloat(e.duration||0);
+            else if (e.type==='Urlaub')   dataMap[e.date] = -1;
+            else if (e.type==='Krank')    dataMap[e.date] = -2;
+        });
+    }
+    const firstDay = new Date(yr, 0, 1);
+    const dow = firstDay.getDay();
+    const startMon = new Date(firstDay);
+    startMon.setDate(firstDay.getDate() - (dow===0?6:dow-1));
+    const columns = [];
+    let cur = new Date(startMon);
+    while (cur <= endDate || columns.length < 53) {
+        const col = [];
+        for (let d=0; d<7; d++) { col.push(new Date(cur)); cur.setDate(cur.getDate()+1); }
+        columns.push(col);
+        if (cur > endDate && columns.length >= 52) break;
+    }
+    const monthPos = {};
+    columns.forEach((col, ci) => {
+        const f = col.find(d => d.getFullYear()===yr);
+        if (f && !monthPos[f.getMonth()]) monthPos[f.getMonth()] = ci;
+    });
+    const mNames = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+    const dlabels = ['Mo','','Mi','','Fr','','So'];
+    let html = '<div style="display:flex;gap:4px"><div class="heatmap-weeks">' +
+        dlabels.map(l => '<div class="heatmap-day-label">'+l+'</div>').join('') + '</div><div>';
+    html += '<div class="heatmap-months">';
+    columns.forEach((col, ci) => {
+        const f = col.find(d => d.getFullYear()===yr);
+        const m = f ? f.getMonth() : -1;
+        html += '<div class="heatmap-month-label" style="width:15px">' + (m>=0&&monthPos[m]===ci ? mNames[m] : '') + '</div>';
+    });
+    html += '</div><div class="heatmap-cols">';
+    columns.forEach((col, ci) => {
+        html += '<div class="heatmap-col">';
+        col.forEach(d => {
+            const ds = d.toISOString().split('T')[0];
+            const inYear = d.getFullYear()===yr;
+            const isToday = ds===today.toISOString().split('T')[0];
+            const isWe = d.getDay()===0||d.getDay()===6;
+            const h = dataMap[ds];
+            let cls = 'heatmap-cell ';
+            let tip = ds;
+            if (!inYear) { cls+='h0'; }
+            else if (h===-1)  { cls+='h2'; tip+=' — Urlaub'; }
+            else if (h===-2)  { cls+='h1'; tip+=' — Krank'; }
+            else if (!h||h<=0){ cls+=(isWe?'h0 weekend-cell':'h0'); }
+            else if (h<4)  { cls+='h1'; tip+=' — '+h.toFixed(1)+'h'; }
+            else if (h<6)  { cls+='h2'; tip+=' — '+h.toFixed(1)+'h'; }
+            else if (h<8)  { cls+='h3'; tip+=' — '+h.toFixed(1)+'h'; }
+            else if (h<10) { cls+='h4'; tip+=' — '+h.toFixed(1)+'h'; }
+            else           { cls+='h5'; tip+=' — '+h.toFixed(1)+'h'; }
+            if (isToday) cls+=' today-cell';
+            html += '<div class="'+cls+'" style="animation-delay:'+(ci*0.005)+'s" onmouseenter="showHeatTip(event,\''+tip+'\')" onmouseleave="hideHeatTip()" onclick="heatCellClick(\''+ds+'\')"></div>';
+        });
+        html += '</div>';
+    });
+    html += '</div></div><div class="heatmap-legend"><span>Weniger</span><div class="heatmap-legend-cells">';
+    for (let i=0;i<=5;i++) html += '<div class="heatmap-cell h'+i+'" style="animation:none"></div>';
+    html += '</div><span>Mehr</span></div></div>';
+    wrap.innerHTML = html;
+}
+function showHeatTip(e, text) {
+    const tip = document.getElementById('heatmap-tooltip');
+    if (!tip) return;
+    tip.textContent = text; tip.style.display='block';
+    tip.style.left=(e.clientX+12)+'px'; tip.style.top=(e.clientY-28)+'px';
+}
+function hideHeatTip() { const t=document.getElementById('heatmap-tooltip'); if(t) t.style.display='none'; }
+function heatCellClick(ds) {
+    if (!ds||ds==='undefined') return;
+    const [y,m] = ds.split('-').map(Number);
+    const ms=document.getElementById('monSelect'),ys=document.getElementById('yearSelect');
+    if (ms) ms.value = m-1;
+    if (ys) { for (let o of ys.options) if (parseInt(o.value)===y){ys.value=y;break;} }
+    loadLogs();
+    const [yy,mm,dd]=ds.split('-');
+    toast('📅 Zu '+dd+'.'+mm+'.'+yy+' gewechselt','info');
+}
+
+// ── Jahresarchiv ──
+function renderArchive() {
+    const el = document.getElementById('tab-archive');
+    if (!el) return;
+    const cy = new Date().getFullYear();
+    const years = [];
+    for (let y=cy; y>=cy-5; y--) years.push(y);
+    let maxH = 0;
+    const yd = years.map(yr => {
+        let th=0,td=0;
+        for (let m=0;m<12;m++) {
+            const logs = getLogsForMonth(yr,m);
+            const w = logs.filter(e=>e.type==='Arbeitszeit'||e.type==='Halbtag');
+            th += w.reduce((s,e)=>s+parseFloat(e.duration||0),0);
+            td += w.length;
+        }
+        if (th>maxH) maxH=th;
+        return {yr,th,td};
+    });
+    let html = '<div class="card"><div class="card-title">🗃 Jahresarchiv</div><div class="archive-grid">';
+    yd.forEach(({yr,th,td}) => {
+        const pct = maxH>0?Math.round((th/maxH)*100):0;
+        html += '<div class="archive-card" onclick="jumpToYear('+yr+')"><div class="archive-year" style="color:'+(yr===cy?'var(--red)':'var(--text)')+'">'+yr+'</div><div class="archive-hours">'+th.toFixed(1)+' h</div><div class="archive-days">'+td+' Tage</div><div class="archive-bar"><div class="archive-fill" style="width:'+pct+'%"></div></div></div>';
+    });
+    html += '</div></div><div class="card" style="margin-top:14px;overflow-x:auto"><div class="card-title">📊 Jahresheatmap '+cy+'</div><div id="heatmap-wrap"></div></div>';
+    el.innerHTML = html;
+    setTimeout(()=>renderHeatmap(cy),60);
+}
+function jumpToYear(yr) {
+    const ys=document.getElementById('yearSelect');
+    if(ys) { for(let o of ys.options) if(parseInt(o.value)===yr){ys.value=yr;break;} }
+    loadLogs(); toast('📅 Jahr '+yr+' geladen','info');
+}
+
+// ── Erweiterte Analyse (replaces updateAdvanced) ──
+function updateAdvanced() {
+    const el = document.getElementById('tab-advanced');
+    if (!el) return;
+    const workDays = state.logs.filter(e=>e.type==='Arbeitszeit'||e.type==='Halbtag');
+    const soll = parseFloat(document.getElementById('sollH')?.value||160);
+    const ist = workDays.reduce((s,e)=>s+parseFloat(e.duration||0),0);
+    let best='—',worst='—',bestH=0,worstH=999;
+    workDays.forEach(e=>{
+        const h=parseFloat(e.duration||0);
+        if(h>bestH){bestH=h;best=(e.date?.split('-').slice(1).reverse().join('.')||'')+' ('+h.toFixed(1)+'h)';}
+        if(h>0&&h<worstH){worstH=h;worst=(e.date?.split('-').slice(1).reverse().join('.')||'')+' ('+h.toFixed(1)+'h)';}
+    });
+    let streak=0,maxStreak=0,prev=null;
+    workDays.forEach(e=>{
+        const d=new Date(e.date);
+        if(prev){const diff=(d-prev)/86400000;streak=diff===1?streak+1:1;}else streak=1;
+        if(streak>maxStreak)maxStreak=streak; prev=d;
+    });
+    const totalBreaks=state.logs.reduce((s,e)=>s+parseInt(e.pause||0),0);
+    const vacDays=state.logs.filter(e=>e.type==='Urlaub').length;
+    const sickDays=state.logs.filter(e=>e.type==='Krank').length;
+    const perf=soll>0?Math.round((ist/soll)*100):0;
+    const overtime=Math.max(0,ist-soll);
+    // hour buckets
+    const hb=new Array(24).fill(0);
+    workDays.forEach(e=>{if(e.start){const [h]=e.start.split(':').map(Number);hb[h]=(hb[h]||0)+parseFloat(e.duration||0);}});
+    const maxB=Math.max(...hb,1);
+    // dow buckets
+    const dob=[0,0,0,0,0,0,0],doc=[0,0,0,0,0,0,0];
+    workDays.forEach(e=>{if(e.date){const dw=new Date(e.date+'T12:00').getDay();dob[dw]+=parseFloat(e.duration||0);doc[dw]++;}});
+    const dowN=['So','Mo','Di','Mi','Do','Fr','Sa'];
+    // tag counts
+    const tc={};
+    state.logs.forEach(e=>{(e.tags||[]).forEach(t=>{tc[t]=(tc[t]||0)+1;});});
+
+    const statsHTML = [
+        ['Bester Tag',best],['Schlechtester Tag',worst],['Längste Serie',maxStreak+' Tage'],
+        ['Gesamte Pause',totalBreaks+' Min'],['Urlaubstage',vacDays],['Kranktage',sickDays],
+        ['Leistungsquote',perf+'%'],['Überstunden',overtime.toFixed(2).replace('.',',')+'h'],
+        ['Fehlende Tage',Math.max(0,Math.round(soll/8)-workDays.length)]
+    ].map(([l,v])=>'<div class="adv-stat"><div class="adv-stat-label">'+l+'</div><div class="adv-stat-val">'+v+'</div></div>').join('');
+
+    const hourCells = hb.map((v,h)=>{
+        const pct=Math.round((v/maxB)*100);
+        const col=pct>70?'var(--green)':pct>30?'var(--yellow)':pct>0?'rgba(212,12,12,.5)':'var(--surface3)';
+        return '<div class="prod-hour-cell" style="background:'+col+'" title="'+h+':00"></div>';
+    }).join('');
+    const hourLabels = hb.map((_,h)=>'<div class="prod-hour-label">'+(h%6===0?h:'')+'</div>').join('');
+    const maxDow = Math.max(...dob,1);
+    const dowBars = dowN.map((dn,i)=>{
+        const avg=doc[i]>0?dob[i]/doc[i]:0;
+        const pct=Math.round((dob[i]/maxDow)*100);
+        const col=avg>=8?'var(--green)':avg>4?'var(--yellow)':avg>0?'rgba(212,12,12,.6)':'var(--surface3)';
+        return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="font-size:.6rem;color:var(--text-dim)">'+(avg>0?avg.toFixed(1):'')+'</div><div style="width:100%;background:'+col+';height:'+Math.max(4,pct*0.5)+'px;border-radius:3px 3px 0 0"></div><div style="font-size:.64rem;color:var(--text-muted)">'+dn+'</div></div>';
+    }).join('');
+    const tagHTML = Object.keys(tc).length ? '<div style="margin-top:18px"><div class="prod-section-title">Tag-Verteilung</div><div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:6px">'+Object.entries(tc).map(([t,c])=>{const df=TAG_DEFS.find(d=>d.id===t);return df?'<div class="tag-chip '+df.cls+'" style="font-size:.75rem;padding:4px 11px">'+df.label+': '+c+'x</div>':''}).join('')+'</div></div>' : '';
+
+    el.innerHTML='<div class="card"><div class="card-title">🔬 Erweiterte Analyse</div><div class="adv-stats-grid">'+statsHTML+'</div><div style="margin-top:18px"><div class="prod-section-title">Aktivitätsprofil nach Uhrzeit</div><div class="prod-hour-grid">'+hourCells+'</div><div class="prod-hour-labels">'+hourLabels+'</div></div><div style="margin-top:18px"><div class="prod-section-title">Durchschnitt nach Wochentag</div><div style="display:flex;gap:8px;align-items:flex-end;height:60px;margin-top:6px">'+dowBars+'</div></div>'+tagHTML+'</div>';
+}
+
+// ── Monatsbericht per E-Mail ──
+function openReportModal() {
+    const mi=parseInt(document.getElementById('monSelect').value);
+    const yr=document.getElementById('yearSelect').value;
+    document.getElementById('report-period').textContent=CONFIG.months[mi]+' '+yr;
+    openModal('modal-report');
+}
+function sendMonthlyReport() {
+    const name=document.getElementById('p_name')?.value||CONFIG.defaults.name;
+    const comp=document.getElementById('p_company')?.value||CONFIG.defaults.company;
+    const to=document.getElementById('report-email')?.value||'';
+    const mi=parseInt(document.getElementById('monSelect').value);
+    const yr=document.getElementById('yearSelect').value;
+    const mn=CONFIG.months[mi];
+    const workDays=state.logs.filter(e=>e.type==='Arbeitszeit'||e.type==='Halbtag');
+    const ist=workDays.reduce((s,e)=>s+parseFloat(e.duration||0),0);
+    const soll=parseFloat(document.getElementById('sollH')?.value)||160;
+    const diff=ist-soll;
+    const rate=parseFloat(document.getElementById('stundenlohn')?.value)||0;
+    const vacDays=state.logs.filter(e=>e.type==='Urlaub').length;
+    const sickDays=state.logs.filter(e=>e.type==='Krank').length;
+    const rows=workDays.map(e=>'  '+e.date+': '+( e.start||'?')+'-'+(e.end||'?')+' ('+( e.pause||0)+'min) = '+parseFloat(e.duration||0).toFixed(2)+'h').join('\n');
+    const bodyText='Sehr geehrte Damen und Herren,\n\nanbei mein Arbeitszeitbericht fuer '+mn+' '+yr+'.\n\n'+'Mitarbeiter: '+name+'\nEinsatzbetrieb: '+comp+'\n\nIst-Stunden:  '+ist.toFixed(2).replace('.',',')+' h\nSoll-Stunden: '+soll.toFixed(2).replace('.',',')+' h\nDifferenz:    '+(diff>=0?'+':'')+diff.toFixed(2).replace('.',',')+' h\nArbeitstage:  '+workDays.length+'\nUrlaubstage:  '+vacDays+'\nKranktage:    '+sickDays+(rate>0?'\nVerdienst:    '+(ist*rate).toFixed(2).replace('.',',')+' Euro':'')+'\n\nDetails:\n'+rows+'\n\nMit freundlichen Gruessen\n'+name;
+    const subj=encodeURIComponent('Arbeitszeitbericht '+mn+' '+yr+' - '+name);
+    const body=encodeURIComponent(bodyText);
+    window.open('mailto:'+to+'?subject='+subj+'&body='+body);
+    closeModal('modal-report');
+    toast('📧 E-Mail-Client geöffnet','info');
+}
+
+// ── Datenverschlüsselung ──
+let encEnabled = localStorage.getItem('enc_enabled')==='1';
+function toggleEncryption() {
+    encEnabled=!encEnabled;
+    localStorage.setItem('enc_enabled',encEnabled?'1':'0');
+    const btn=document.getElementById('enc-btn');
+    if(btn){btn.textContent=encEnabled?'🔐 Verschl. AN':'🔓 Verschl. AUS';btn.style.color=encEnabled?'var(--green)':'var(--text-muted)';}
+    toast(encEnabled?'🔐 Verschlüsselung aktiviert':'🔓 Verschlüsselung deaktiviert','info');
+}
+
+// ── Heatmap reinit on year change ──
+function onYearChange() {
+    loadLogs();
+    const panel=document.getElementById('tab-archive');
+    if(panel && panel.classList.contains('active')) renderArchive();
+}
+
+
+// ─── Init override ───
+window.addEventListener('load', () => {
+    if (localStorage.getItem('theme')==='light') {
+        document.body.classList.add('light');
+        document.getElementById('themeBtn').textContent='🌙';
+    } else { document.getElementById('themeBtn').textContent='☀️'; }
+    try {
+        const s = JSON.parse(localStorage.getItem('active_session')||'null');
+        if (s && isNaN(new Date(s.start).getTime())) localStorage.removeItem('active_session');
+    } catch(e) { localStorage.removeItem('active_session'); }
+    initSelects();
+    loadLogs();
+    startClock();
+    watchOnline();
+    registerSW();
+    // Language
+    currentLang = localStorage.getItem('lang')||'de';
+    document.getElementById('lang-btn').textContent = currentLang.toUpperCase();
+    applyLang();
+    // PIN
+    initPIN();
+    // Pomodoro
+    updatePomoUI();
+    calcHours();
+    // Stundenlohn & Goal from localStorage
+    const sr=localStorage.getItem('stundenlohn'); if(sr){document.getElementById('stundenlohn').value=sr;}
+    const sg=localStorage.getItem('monthlyGoal');  if(sg){document.getElementById('monthlyGoal').value=sg;}
+    document.getElementById('stundenlohn').addEventListener('change',e=>localStorage.setItem('stundenlohn',e.target.value));
+    document.getElementById('monthlyGoal').addEventListener('change',e=>localStorage.setItem('monthlyGoal',e.target.value));
+    // Encryption
+    encEnabled = localStorage.getItem('enc_enabled')==='1';
+    const eb=document.getElementById('enc-btn');
+    if(eb){eb.textContent=encEnabled?'🔐 Verschl. AN':'🔓 Verschl. AUS';eb.style.color=encEnabled?'var(--green)':'var(--text-muted)';}
+    // Close lang menu on outside click
+    document.addEventListener('click', e=>{
+        const m=document.getElementById('lang-menu');
+        if(m && m.classList.contains('open') && !m.closest('.lang-wrap').contains(e.target)) m.classList.remove('open');
+    });
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(ov=>{
+        ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.remove('open'); });
+    });
+});
 </script>
 </body>
 </html>
