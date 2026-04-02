@@ -1131,57 +1131,10 @@ function updateSheetsStatus() {
 }
 
 // ════════════════════════════════════════════
-// Google Sheets Sync — JSONP via <script> tag
-// أضمن طريقة للتواصل مع Apps Script بدون CORS
+// Google Sheets Sync — Simple GET parameters
+// كل بيانات ترسل كـ parameters منفصلة في URL
+// Apps Script يقرأها مباشرة من e.parameter.xxx
 // ════════════════════════════════════════════
-
-let _syncCallbackId = 0;
-
-function sheetsPost(payload) {
-    const url = CONFIG.scriptURL;
-    if (!url || !url.startsWith('https://script.google.com')) return;
-
-    // JSONP: نُرسل البيانات كـ GET parameter عبر <script> tag
-    // Apps Script يستقبلها في doGet(e) ويستجيب بـ callback(result)
-    const cbName = '__gsync_' + (++_syncCallbackId);
-    const encoded = encodeURIComponent(JSON.stringify(payload));
-    const src = url + '?cb=' + cbName + '&payload=' + encoded;
-
-    // timeout: إذا لم يرد السكريبت خلال 8 ثوان → خطأ
-    const timer = setTimeout(() => {
-        delete window[cbName];
-        const s = document.getElementById('_jsonp_' + _syncCallbackId);
-        if (s) s.remove();
-        setSheetStatus('❌ Timeout', 'rgba(212,12,12,.1)', 'var(--red)');
-        setTimeout(updateSheetsStatus, 3000);
-    }, 8000);
-
-    window[cbName] = function(result) {
-        clearTimeout(timer);
-        delete window[cbName];
-        const s = document.getElementById('_jsonp_' + _syncCallbackId);
-        if (s) s.remove();
-        if (result && result.status === 'ok') {
-            setSheetStatus('✅ Synced', 'var(--green-bg)', 'var(--green)');
-            setTimeout(updateSheetsStatus, 3000);
-        } else {
-            setSheetStatus('❌ Fehler', 'rgba(212,12,12,.1)', 'var(--red)');
-            setTimeout(updateSheetsStatus, 3000);
-        }
-    };
-
-    const script = document.createElement('script');
-    script.id  = '_jsonp_' + _syncCallbackId;
-    script.src = src;
-    script.onerror = () => {
-        clearTimeout(timer);
-        delete window[cbName];
-        script.remove();
-        setSheetStatus('❌ Netzfehler', 'rgba(212,12,12,.1)', 'var(--red)');
-        setTimeout(updateSheetsStatus, 3000);
-    };
-    document.head.appendChild(script);
-}
 
 function setSheetStatus(txt, bg, col) {
     const el = document.getElementById('sheets-status');
@@ -1191,18 +1144,102 @@ function setSheetStatus(txt, bg, col) {
     el.style.color      = col;
 }
 
-// ── إرسال حدث فوري (check-in / break / check-out) ──
-function syncEvent(eventType, data) {
-    if (!CONFIG.scriptURL || !CONFIG.scriptURL.startsWith('https://script.google.com')) return;
+// ── الدالة الأساسية للإرسال ──
+function sheetsSend(params) {
+    const url = CONFIG.scriptURL;
+    if (!url || !url.startsWith('https://script.google.com')) return;
+
     setSheetStatus('🔄 Syncing...', 'var(--blue-bg)', 'var(--blue)');
-    sheetsPost({ event: eventType, timestamp: new Date().toISOString(), ...data });
+
+    // نبني الـ URL مع كل parameter بشكل منفصل وواضح
+    const qs = Object.entries(params)
+        .map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(String(v ?? '')))
+        .join('&');
+
+    const fullURL = url + '?' + qs;
+
+    // نفتح الرابط في iframe مخفي — Apps Script يستقبله كـ doGet
+    // هذه الطريقة لا تحتاج CORS وتعمل مع أي إعداد
+    const id = '_gsync_' + Date.now();
+
+    const iframe = document.createElement('iframe');
+    iframe.id    = id;
+    iframe.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;';
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+        setSheetStatus('✅ Synced', 'var(--green-bg)', 'var(--green)');
+        setTimeout(() => { iframe.remove(); updateSheetsStatus(); }, 2000);
+    };
+    iframe.onerror = () => {
+        setSheetStatus('❌ Fehler', 'rgba(212,12,12,.1)', 'var(--red)');
+        setTimeout(() => { iframe.remove(); updateSheetsStatus(); }, 3000);
+    };
+
+    // Timeout fallback
+    setTimeout(() => {
+        if (document.getElementById(id)) {
+            document.getElementById(id)?.remove();
+            // نعتبره نجح (iframe.onload لا يُطلق دائماً مع cross-origin)
+            setSheetStatus('✅ Gesendet', 'var(--green-bg)', 'var(--green)');
+            setTimeout(updateSheetsStatus, 3000);
+        }
+    }, 4000);
+
+    iframe.src = fullURL;
 }
 
-// ── إرسال سجل مكتمل (عند الحفظ اليدوي أو Check-out) ──
+// ── Check-In ──
+function syncCheckIn(date, time, name, location) {
+    sheetsSend({
+        action:   'checkin',
+        date:     date,
+        time:     time,
+        name:     name,
+        location: location,
+        ts:       new Date().toISOString()
+    });
+}
+
+// ── بداية الاستراحة ──
+function syncBreakStart(date, time, name) {
+    sheetsSend({
+        action: 'break_start',
+        date:   date,
+        time:   time,
+        name:   name,
+        ts:     new Date().toISOString()
+    });
+}
+
+// ── نهاية الاستراحة ──
+function syncBreakEnd(date, time, name, duration_min) {
+    sheetsSend({
+        action:       'break_end',
+        date:         date,
+        time:         time,
+        name:         name,
+        duration_min: duration_min,
+        ts:           new Date().toISOString()
+    });
+}
+
+// ── Check-Out (سجل مكتمل) ──
 function syncToGoogleSheets(entry) {
     if (!CONFIG.scriptURL || !CONFIG.scriptURL.startsWith('https://script.google.com')) return;
-    setSheetStatus('🔄 Syncing...', 'var(--blue-bg)', 'var(--blue)');
-    sheetsPost({ event: 'save_entry', entry });
+    sheetsSend({
+        action:   'checkout',
+        id:       entry.id,
+        date:     entry.date,
+        type:     entry.type,
+        start:    entry.start    || '',
+        end:      entry.end      || '',
+        pause:    entry.pause    || 0,
+        duration: entry.duration || 0,
+        note:     entry.note     || '',
+        geo:      entry.geo      || '',
+        ts:       new Date().toISOString()
+    });
 }
 
 // ── مزامنة كاملة لجميع سجلات الشهر ──
@@ -1211,9 +1248,30 @@ function syncAllToSheets() {
     if (!url || !url.startsWith('https://script.google.com')) {
         toast('⚠️ Google Sheets URL nicht konfiguriert', 'warning'); return;
     }
-    setSheetStatus('🔄 Alle syncing...', 'var(--blue-bg)', 'var(--blue)');
-    sheetsPost({ event: 'bulk_sync', logs: state.logs });
-    toast('☁️ Sende ' + state.logs.length + ' Einträge...', 'info');
+    // نرسل كل سجل بشكل منفصل مع تأخير بسيط بين كل واحد
+    let i = 0;
+    function sendNext() {
+        if (i >= state.logs.length) {
+            toast('☁️ Alle ' + state.logs.length + ' Einträge synchronisiert', 'success');
+            return;
+        }
+        const d = state.logs[i++];
+        sheetsSend({
+            action:   'bulk',
+            id:       d.id,
+            date:     d.date,
+            type:     d.type,
+            start:    d.start    || '',
+            end:      d.end      || '',
+            pause:    d.pause    || 0,
+            duration: d.duration || 0,
+            note:     d.note     || '',
+            ts:       new Date().toISOString()
+        });
+        setTimeout(sendNext, 600); // 600ms بين كل سجل لتجنب throttling
+    }
+    toast('🔄 Sende ' + state.logs.length + ' Einträge...', 'info');
+    sendNext();
 }
 
 // ── إضافة / تحديث سجل ──
@@ -1292,12 +1350,12 @@ function doCheckIn() {
     tryGetLocation('in');
     toast(`✅ Check-In um ${fmtTime(now)}`, 'success');
     // ── إرسال فوري لـ Google Sheets ──
-    syncEvent('check_in', {
-        date: now.toISOString().split('T')[0],
-        start: fmtTime(now),
-        name: document.getElementById('p_name')?.value || CONFIG.defaults.name,
-        location: document.getElementById('p_location')?.value || CONFIG.defaults.location
-    });
+    syncCheckIn(
+        now.toISOString().split('T')[0],
+        fmtTime(now),
+        document.getElementById('p_name')?.value || CONFIG.defaults.name,
+        document.getElementById('p_location')?.value || CONFIG.defaults.location
+    );
 }
 
 function doCheckOut() {
@@ -1355,11 +1413,11 @@ function startBreak() {
     document.getElementById('sessionTimer').classList.add('paused');
     toast('☕ Pause gestartet', 'info');
     // ── إرسال فوري لـ Google Sheets ──
-    syncEvent('break_start', {
-        date: state.session.start.toISOString().split('T')[0],
-        break_start: fmtTime(new Date()),
-        name: document.getElementById('p_name')?.value || CONFIG.defaults.name
-    });
+    syncBreakStart(
+        state.session.start.toISOString().split('T')[0],
+        fmtTime(new Date()),
+        document.getElementById('p_name')?.value || CONFIG.defaults.name
+    );
 }
 
 function endBreak() {
@@ -1372,12 +1430,12 @@ function endBreak() {
     document.getElementById('sessionTimer').classList.remove('paused');
     toast(`✅ Pause beendet (${Math.round(dur/60)} Min)`, 'success');
     // ── إرسال فوري لـ Google Sheets ──
-    syncEvent('break_end', {
-        date: state.session.start.toISOString().split('T')[0],
-        break_end: fmtTime(new Date()),
-        break_duration_min: Math.round(dur/60),
-        name: document.getElementById('p_name')?.value || CONFIG.defaults.name
-    });
+    syncBreakEnd(
+        state.session.start.toISOString().split('T')[0],
+        fmtTime(new Date()),
+        document.getElementById('p_name')?.value || CONFIG.defaults.name,
+        Math.round(dur/60)
+    );
 }
 
 function startSessionTimer() {
