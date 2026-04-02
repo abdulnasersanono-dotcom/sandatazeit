@@ -1131,9 +1131,8 @@ function updateSheetsStatus() {
 }
 
 // ════════════════════════════════════════════
-// Google Sheets Sync — Simple GET parameters
-// كل بيانات ترسل كـ parameters منفصلة في URL
-// Apps Script يقرأها مباشرة من e.parameter.xxx
+// Google Sheets Sync — fetch GET (يعمل موبايل + ديسكتوب)
+// Apps Script يُرجع CORS headers → fetch يعمل بدون مشاكل
 // ════════════════════════════════════════════
 
 function setSheetStatus(txt, bg, col) {
@@ -1144,49 +1143,51 @@ function setSheetStatus(txt, bg, col) {
     el.style.color      = col;
 }
 
-// ── الدالة الأساسية للإرسال ──
+// قائمة انتظار لضمان عدم ضياع أي بيانات
+const _syncQueue = [];
+let   _syncBusy  = false;
+
 function sheetsSend(params) {
     const url = CONFIG.scriptURL;
     if (!url || !url.startsWith('https://script.google.com')) return;
+    _syncQueue.push(params);
+    _processQueue();
+}
+
+async function _processQueue() {
+    if (_syncBusy || _syncQueue.length === 0) return;
+    _syncBusy = true;
+
+    const params = _syncQueue.shift();
+    const url    = CONFIG.scriptURL;
 
     setSheetStatus('🔄 Syncing...', 'var(--blue-bg)', 'var(--blue)');
 
-    // نبني الـ URL مع كل parameter بشكل منفصل وواضح
     const qs = Object.entries(params)
-        .map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(String(v ?? '')))
+        .map(([k,v]) => encodeURIComponent(k) + '=' + encodeURIComponent(String(v ?? '')))
         .join('&');
 
-    const fullURL = url + '?' + qs;
-
-    // نفتح الرابط في iframe مخفي — Apps Script يستقبله كـ doGet
-    // هذه الطريقة لا تحتاج CORS وتعمل مع أي إعداد
-    const id = '_gsync_' + Date.now();
-
-    const iframe = document.createElement('iframe');
-    iframe.id    = id;
-    iframe.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;';
-    document.body.appendChild(iframe);
-
-    iframe.onload = () => {
+    try {
+        // fetch مع no-cors — الطلب يصل للسكريبت دائماً
+        // Apps Script لا يحتاج CORS headers لأننا لا نقرأ الاستجابة
+        await fetch(url + '?' + qs, {
+            method: 'GET',
+            mode:   'no-cors',
+            cache:  'no-store'
+        });
         setSheetStatus('✅ Synced', 'var(--green-bg)', 'var(--green)');
-        setTimeout(() => { iframe.remove(); updateSheetsStatus(); }, 2000);
-    };
-    iframe.onerror = () => {
-        setSheetStatus('❌ Fehler', 'rgba(212,12,12,.1)', 'var(--red)');
-        setTimeout(() => { iframe.remove(); updateSheetsStatus(); }, 3000);
-    };
+        setTimeout(updateSheetsStatus, 3000);
+    } catch (err) {
+        // فشل الشبكة — أعد البيانات لأول القائمة للمحاولة لاحقاً
+        _syncQueue.unshift(params);
+        setSheetStatus('❌ Offline', 'rgba(212,12,12,.1)', 'var(--red)');
+        toast('⚠️ Offline – wird später gesendet', 'warning');
+        setTimeout(updateSheetsStatus, 4000);
+    }
 
-    // Timeout fallback
-    setTimeout(() => {
-        if (document.getElementById(id)) {
-            document.getElementById(id)?.remove();
-            // نعتبره نجح (iframe.onload لا يُطلق دائماً مع cross-origin)
-            setSheetStatus('✅ Gesendet', 'var(--green-bg)', 'var(--green)');
-            setTimeout(updateSheetsStatus, 3000);
-        }
-    }, 4000);
-
-    iframe.src = fullURL;
+    _syncBusy = false;
+    // إذا في قائمة انتظار، أرسل التالي بعد 300ms
+    if (_syncQueue.length > 0) setTimeout(_processQueue, 300);
 }
 
 // ── Check-In ──
